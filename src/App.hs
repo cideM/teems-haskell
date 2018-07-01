@@ -59,24 +59,26 @@ instance ToJSON Theme
 
 type Apps = Map.Map T.Text App
 
+type PathToConfig = String
+
 alacritty :: App
 alacritty = App "alacritty" "**/.config/alacritty/alacritty.yml"
 
 apps :: Apps
 apps = Map.fromList [(appName alacritty, alacritty)]
 
-getThemes :: FilePath -> IO (Either String [Theme])
+getThemes :: PathToConfig -> IO (Either String [Theme])
 getThemes fp = do
-  contents <- BL.readFile fp
-  return $ eitherDecode contents
+    contents <- BL.readFile fp
+    return $ eitherDecode contents
 
 -- TODO: Vector
 getConfigPaths :: [App] -> IO [(App, [FilePath])]
 getConfigPaths apps = do
-  xdg <- getXdgDirectory XdgConfig ""
-  mapM (go xdg) apps
- where
-  go dir app = do
-    let globPattern = compile . T.unpack $ configName app
-    paths <- globDir1 globPattern dir
-    return (app, paths)
+    xdg <- getXdgDirectory XdgConfig ""
+    mapM (go xdg) apps
+  where
+    go dir app = do
+        let globPattern = compile . T.unpack $ configName app
+        paths <- globDir1 globPattern dir
+        return (app, paths)

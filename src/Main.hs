@@ -2,21 +2,14 @@
 
 module Main where
 
-import           Data.ByteString.Lazy          as BL
-import qualified Data.Map                      as Map
 import           Data.Text                     as T
-import           Data.Text.Encoding            as TEnc
 import           Data.Text.IO                  as TIO
 import           Data.Traversable
 import           App
 import           Options.Applicative
-import           GHC.Generics
 import           System.Directory
 import           Data.Semigroup                 ( (<>) )
 import           CLI
-import           System.Environment
-import           System.FilePath.Glob
-import           System.IO
 
 run :: CLIOptions -> IO ()
 run (CLIOptions path cmd) = case cmd of
