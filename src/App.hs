@@ -20,7 +20,7 @@ import           System.IO
 
 data App = App
     { appName :: T.Text
-    , configName :: T.Text
+    , configPattern :: T.Text
     } deriving (Show)
 
 data Colors = Colors
@@ -72,6 +72,8 @@ getThemes fp = do
     contents <- BL.readFile fp
     return $ eitherDecode contents
 
+-- TODO: just hardcode possible paths
+
 -- TODO: Vector
 getConfigPaths :: [App] -> IO [(App, [FilePath])]
 getConfigPaths apps = do
@@ -79,6 +81,6 @@ getConfigPaths apps = do
     mapM (go xdg) apps
   where
     go dir app = do
-        let globPattern = compile . T.unpack $ configName app
+        let globPattern = compile . T.unpack $ configPattern app
         paths <- globDir1 globPattern dir
         return (app, paths)
