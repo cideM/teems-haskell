@@ -20,7 +20,7 @@ type ParseErr = T.Text
 
 data App = App
     { appName :: T.Text
-    , configCreator :: Theme -> T.Text -> Either ParseErr T.Text
+    , configCreator :: Theme -> T.Text -> T.Text
     , configPaths :: [IO FilePath]
     }
 
