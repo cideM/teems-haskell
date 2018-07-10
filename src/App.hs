@@ -15,13 +15,16 @@ import           GHC.Generics
 import           System.Directory
 import           Data.Semigroup                 ( (<>) )
 import           System.Environment
-import           System.FilePath.Glob
 import           System.IO
 
 data App = App
     { appName :: T.Text
-    , configPattern :: T.Text
-    } deriving (Show)
+    , configCreator :: Theme -> T.Text -> T.Text
+    , configPaths :: [IO FilePath]
+    }
+
+instance Show App where
+    show = show . appName
 
 data Colors = Colors
     { foreground :: T.Text
@@ -59,28 +62,22 @@ instance ToJSON Theme
 
 type Apps = Map.Map T.Text App
 
-type PathToConfig = String
+makeOsPath :: FilePath -> IO FilePath
+makeOsPath p = do
+    configDir <- getXdgDirectory XdgConfig ""
+    return $ configDir ++ p
 
 alacritty :: App
-alacritty = App "alacritty" "**/.config/alacritty/alacritty.yml"
+alacritty = App {
+    appName = "alacritty",
+    configCreator = undefined,
+    configPaths = [makeOsPath "/alacritty/alacritty.yml"]
+}
 
 apps :: Apps
 apps = Map.fromList [(appName alacritty, alacritty)]
 
-getThemes :: PathToConfig -> IO (Either String [Theme])
-getThemes fp = do
-    contents <- BL.readFile fp
+getThemes :: FilePath -> IO (Either String [Theme])
+getThemes p = do
+    contents <- BL.readFile p
     return $ eitherDecode contents
-
--- TODO: just hardcode possible paths
-
--- TODO: Vector
-getConfigPaths :: [App] -> IO [(App, [FilePath])]
-getConfigPaths apps = do
-    xdg <- getXdgDirectory XdgConfig ""
-    mapM (go xdg) apps
-  where
-    go dir app = do
-        let globPattern = compile . T.unpack $ configPattern app
-        paths <- globDir1 globPattern dir
-        return (app, paths)

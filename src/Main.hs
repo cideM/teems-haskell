@@ -11,6 +11,7 @@ import           Options.Applicative
 import           System.Directory
 import           Data.Semigroup                 ( (<>) )
 import           CLI
+import           Control.Monad.IO.Class
 
 run :: CLIOptions -> IO ()
 run (CLIOptions path cmd) = case cmd of
@@ -35,8 +36,9 @@ run (CLIOptions path cmd) = case cmd of
         case t' of
           Nothing  -> TIO.putStrLn . T.pack $ "Could not find " ++ theme
           (Just t) -> do
-            apps <- getConfigPaths [alacritty]
-            mapM_ (mapM_ (TIO.putStrLn . T.pack . (++) "Foo ") . snd) apps
+            configs <- sequence $ configPaths alacritty
+            -- TODO: Remove this is only for logging
+            mapM_ (TIO.putStrLn . T.pack) configs
             TIO.putStrLn $ T.pack "Activate " `T.append` T.pack theme
 
 main :: IO ()
