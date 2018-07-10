@@ -52,8 +52,10 @@ instance FromJSON Colors
 
 instance ToJSON Colors
 
+type ThemeName = T.Text
+
 data Theme = Theme
-    { name :: T.Text
+    { name :: ThemeName
     , colors :: Colors
     } deriving (Generic, Show)
 
