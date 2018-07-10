@@ -2,16 +2,24 @@
 
 module Main where
 
+import           Data.Aeson
 import           Data.Text                     as T
 import           Data.Text.IO                  as TIO
 import           Data.Traversable              as TR
+import           Data.ByteString.Lazy          as BL
 import           Data.List                     as DL
-import           App
+import           Apps.Util
+import           Apps.Alacritty
 import           Options.Applicative
 import           System.Directory
 import           Data.Semigroup                 ( (<>) )
 import           CLI
 import           Control.Monad.IO.Class
+
+getThemes :: FilePath -> IO (Either String [Theme])
+getThemes p = do
+  contents <- BL.readFile p
+  return $ eitherDecode contents
 
 run :: CLIOptions -> IO ()
 run (CLIOptions path cmd) = case cmd of
@@ -23,7 +31,7 @@ run (CLIOptions path cmd) = case cmd of
       (Left  msg   ) -> TIO.putStrLn $ T.pack msg
       (Right themes) -> mapM_ (TIO.putStrLn . name) themes
 
-  (ActivateTheme theme) -> do
+  (ActivateTheme selectedTheme) -> do
 
     themes' <- getThemes path
 
@@ -31,15 +39,21 @@ run (CLIOptions path cmd) = case cmd of
       (Left  msg   ) -> TIO.putStrLn $ T.pack msg
       (Right themes) -> do
 
-        let t' = DL.find ((==) theme . T.unpack . name) themes
+        let theme' = DL.find ((==) selectedTheme . T.unpack . name) themes
 
-        case t' of
-          Nothing  -> TIO.putStrLn . T.pack $ "Could not find " ++ theme
-          (Just t) -> do
+        case theme' of
+          Nothing  -> TIO.putStrLn $ "Could not find " `T.append` T.pack selectedTheme
+          (Just theme) -> do
             configs <- sequence $ configPaths alacritty
-            -- TODO: Remove this is only for logging
-            mapM_ (TIO.putStrLn . T.pack) configs
-            TIO.putStrLn $ T.pack "Activate " `T.append` T.pack theme
+            mapM_ configTransformer configs
+            TIO.putStrLn $ "Activated " `T.append` T.pack selectedTheme
+           where
+            configTransformer config = do
+              content <- TIO.readFile config
+              let parsed = Apps.Util.configCreator alacritty theme content
+              case parsed of
+                (Left err) -> TIO.putStrLn err
+                (Right newConfig) -> TIO.putStrLn newConfig
 
 main :: IO ()
 main =

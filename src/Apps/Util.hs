@@ -1,10 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric #-}
 
-module App where
+module Apps.Util where
 
 import           Data.Aeson
-import           Data.ByteString.Lazy          as BL
 import qualified Data.Map                      as Map
 import           Data.Text                     as T
 import           Data.Text.Encoding            as TEnc
@@ -17,9 +16,11 @@ import           Data.Semigroup                 ( (<>) )
 import           System.Environment
 import           System.IO
 
+type ParseErr = T.Text
+
 data App = App
     { appName :: T.Text
-    , configCreator :: Theme -> T.Text -> T.Text
+    , configCreator :: Theme -> T.Text -> Either ParseErr T.Text
     , configPaths :: [IO FilePath]
     }
 
@@ -66,18 +67,3 @@ makeOsPath :: FilePath -> IO FilePath
 makeOsPath p = do
     configDir <- getXdgDirectory XdgConfig ""
     return $ configDir ++ p
-
-alacritty :: App
-alacritty = App {
-    appName = "alacritty",
-    configCreator = undefined,
-    configPaths = [makeOsPath "/alacritty/alacritty.yml"]
-}
-
-apps :: Apps
-apps = Map.fromList [(appName alacritty, alacritty)]
-
-getThemes :: FilePath -> IO (Either String [Theme])
-getThemes p = do
-    contents <- BL.readFile p
-    return $ eitherDecode contents
