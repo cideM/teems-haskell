@@ -8,6 +8,7 @@ import           Apps.Util                     as Util
 import           Text.Parser.Combinators
 import           Text.Trifecta
 import           Control.Applicative
+import Control.Monad.Trans.State.Lazy
 
 data Mode = Normal | Bright deriving (Show)
 
@@ -82,31 +83,41 @@ getThemeColor t color m =
                 "white"   -> Util.color15 themeColors
     in  "'0x" `T.append` T.tail color' `T.append` "'"
 
+initialState :: State [T.Text] Mode
+initialState = do
+    put []
+    return Normal
+
 -- TODO: Vector
 configCreator :: Theme -> T.Text -> T.Text
-configCreator theme config = run theme (T.lines config) [] Normal
+configCreator theme config = run theme (T.lines config) initialState
   where
-    run :: Theme -> [T.Text] -> [T.Text] -> Mode -> T.Text
-    run _ [] output _ = T.unlines output
-    run t input output mode =
+    run :: Theme -> [T.Text] -> State [T.Text] Mode -> T.Text
+    run _ [] state = do
+        x <- get
+        T.unlines x
+    run t input state =
         let parser = choice [parseMode, parseColor]
             line   = T.unpack $ Prelude.head input
             result = parseString parser mempty line
             input' = Prelude.tail input
         in  case result of
-                (Success (ModeResult newMode)) -> run t input' output' newMode
-                    where output' = output ++ [Prelude.head input]
-                (Success (ColorResult (space, color))) -> run t
-                                                              input'
-                                                              output'
-                                                              mode
+                (Success (ModeResult newMode)) -> do
+                    put $ output ++ [Prelude.head input]
+                    run t input' (return newMode)
+                (Success (ColorResult (space, color))) -> do
+                    put output'
+                    run t input' state
                   where
-                    output' =
+                    output' = do
+                        x <- get
                         output
                             ++ [ space
                                  `T.append` color
                                  `T.append` ": "
-                                 `T.append` getThemeColor theme color mode
+                                 `T.append` getThemeColor theme color x
                                ]
-                (Failure err) -> run t input' output' mode
+                (Failure err) -> do
+                        put output'
+                        run t input' state
                     where output' = output ++ [Prelude.head input]
