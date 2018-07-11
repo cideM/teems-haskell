@@ -3,12 +3,13 @@
 module Apps.Alacritty where
 
 import           Data.Text                     as T
+                                         hiding ( foldr )
 import           Data.Text.IO                  as TIO
 import           Apps.Util                     as Util
 import           Text.Parser.Combinators
 import           Text.Trifecta
 import           Control.Applicative
-import Control.Monad.Trans.State.Lazy
+import           Data.List                      ( foldr )
 
 data Mode = Normal | Bright deriving (Show)
 
@@ -73,51 +74,36 @@ getThemeColor t color m =
                 "cyan"       -> Util.color6 themeColors
                 "white"      -> Util.color7 themeColors
             Bright -> case color of
-                "black"   -> Util.color8 themeColors
-                "red"     -> Util.color9 themeColors
-                "green"   -> Util.color10 themeColors
-                "yellow"  -> Util.color11 themeColors
-                "blue"    -> Util.color12 themeColors
-                "magenta" -> Util.color13 themeColors
-                "cyan"    -> Util.color14 themeColors
-                "white"   -> Util.color15 themeColors
+                "background" -> Util.color0 themeColors
+                "foreground" -> Util.color15 themeColors
+                "black"      -> Util.color8 themeColors
+                "red"        -> Util.color9 themeColors
+                "green"      -> Util.color10 themeColors
+                "yellow"     -> Util.color11 themeColors
+                "blue"       -> Util.color12 themeColors
+                "magenta"    -> Util.color13 themeColors
+                "cyan"       -> Util.color14 themeColors
+                "white"      -> Util.color15 themeColors
     in  "'0x" `T.append` T.tail color' `T.append` "'"
-
-initialState :: State [T.Text] Mode
-initialState = do
-    put []
-    return Normal
 
 -- TODO: Vector
 configCreator :: Theme -> T.Text -> T.Text
-configCreator theme config = run theme (T.lines config) initialState
+configCreator theme config = T.unlines . fst . foldr run ([], Normal) $ T.lines
+    config
   where
-    run :: Theme -> [T.Text] -> State [T.Text] Mode -> T.Text
-    run _ [] state = do
-        x <- get
-        T.unlines x
-    run t input state =
+    -- Keep track of whether we're parsing normal or bright colors
+    run line (xs, mode) =
         let parser = choice [parseMode, parseColor]
-            line   = T.unpack $ Prelude.head input
-            result = parseString parser mempty line
-            input' = Prelude.tail input
+            result = parseString parser mempty $ T.unpack line
         in  case result of
-                (Success (ModeResult newMode)) -> do
-                    put $ output ++ [Prelude.head input]
-                    run t input' (return newMode)
-                (Success (ColorResult (space, color))) -> do
-                    put output'
-                    run t input' state
+                (Success (ModeResult  newMode       )) -> (line : xs, newMode)
+                (Success (ColorResult (space, color))) -> (newLine : xs, mode)
                   where
-                    output' = do
-                        x <- get
-                        output
-                            ++ [ space
-                                 `T.append` color
-                                 `T.append` ": "
-                                 `T.append` getThemeColor theme color x
-                               ]
-                (Failure err) -> do
-                        put output'
-                        run t input' state
-                    where output' = output ++ [Prelude.head input]
+                    newLine =
+                        -- Keep whitespace until first character because
+                        -- indentation matters in yaml
+                        space
+                            `T.append` color
+                            `T.append` ": "
+                            `T.append` getThemeColor theme color mode
+                (Failure err) -> (line : xs, mode)
