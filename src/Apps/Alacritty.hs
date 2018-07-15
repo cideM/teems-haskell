@@ -4,11 +4,9 @@ module Apps.Alacritty where
 
 import           Data.Text                     as T
                                          hiding ( foldr )
-import           Data.Text.IO                  as TIO
 import           Apps.Util                     as Util
 import           Text.Parser.Combinators
 import           Text.Trifecta
-import           Control.Applicative
 import           Data.List                      ( foldr )
 
 data Mode = Normal | Bright deriving (Show)
@@ -58,7 +56,7 @@ parseColor = try $ do
         , string "background"
         , string "foreground"
         ]
-    char ':'
+    _ <- char ':'
     spaces2 <- some space
     return . ColorResult $ ParsedColor
         { leadingSpace = T.pack spaces1
@@ -66,6 +64,7 @@ parseColor = try $ do
         , spaceBetween = T.pack spaces2
         }
 
+-- TODO: Throw on unknown color
 getThemeColor :: Theme -> T.Text -> Mode -> T.Text
 getThemeColor theme color mode =
     let themeColors = colors theme
@@ -100,13 +99,13 @@ configCreator :: Theme -> T.Text -> T.Text
 configCreator theme config = T.unlines . fst . foldr run ([], Normal) $ T.lines
     config
   where
-    run line (xs, mode) =
+    run currentLine (xs, mode) =
         let parser         = choice [parseMode, parseColor]
-            result         = parseString parser mempty $ T.unpack line
+            result         = parseString parser mempty $ T.unpack currentLine
             getThemeColor' = getThemeColor theme
         in  case result of
                 -- Keep track of whether we're parsing normal or bright colors
-                (Success (ModeResult  newMode    )) -> (line : xs, newMode)
+                (Success (ModeResult  newMode    )) -> (currentLine : xs, newMode)
                 (Success (ColorResult parsedColor)) -> (newLine : xs, mode)
                   where
                     newLine =
@@ -119,4 +118,4 @@ configCreator theme config = T.unlines . fst . foldr run ([], Normal) $ T.lines
                             `T.append` getThemeColor'
                                            (colorValue parsedColor)
                                            mode
-                (Failure err) -> (line : xs, mode)
+                (Failure _) -> (currentLine : xs, mode)

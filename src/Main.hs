@@ -5,17 +5,14 @@ module Main where
 import           Data.Aeson
 import           Data.Text                     as T
 import           Data.Text.IO                  as TIO
-import           Data.Traversable              as TR
 import           Data.ByteString.Lazy          as BL
 import           Data.List                     as DL
 import           Apps.Util                     as Util
 import           Apps.Alacritty
 import           Options.Applicative
-import           System.Directory
 import           Data.Semigroup                 ( (<>) )
 import           CLI
 import           Control.Monad.IO.Class
-import           Control.Monad.Trans.Except
 import           Control.Exception.Safe
 
 data AppException = ThemeDecodeException | ThemeNotFoundException deriving (Show)
@@ -29,7 +26,7 @@ getThemes :: (MonadThrow m, MonadIO m) => FilePath -> m [Theme]
 getThemes p = do
   contents <- liftIO $ BL.readFile p
   case eitherDecode contents of
-    (Left  err) -> throw ThemeDecodeException
+    (Left  _) -> throw ThemeDecodeException
     (Right x  ) -> return x
 
 listThemes :: (MonadThrow m, MonadIO m) => FilePath -> m ()
