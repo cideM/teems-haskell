@@ -1,19 +1,12 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Apps.Util where
 
 import           Data.Aeson
-import qualified Data.Map                      as Map
 import           Data.Text                     as T
-import           Data.Text.Encoding            as TEnc
-import           Data.Text.IO                  as TIO
-import           Data.Traversable
 import           Options.Applicative
 import           GHC.Generics
 import           System.Directory
-import           Data.Semigroup                 ( (<>) )
-import           System.Environment
 import           System.IO
 
 type ParseErr = T.Text
@@ -62,8 +55,6 @@ data Theme = Theme
 instance FromJSON Theme
 
 instance ToJSON Theme
-
-type Apps = Map.Map T.Text App
 
 getConfigPath :: FilePath -> IO FilePath
 getConfigPath = getXdgDirectory XdgConfig
