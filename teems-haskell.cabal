@@ -30,3 +30,4 @@ executable teems-haskell
                      , parsers
                      , raw-strings-qq
                      , transformers
+                     , safe-exceptions

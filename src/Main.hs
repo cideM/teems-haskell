@@ -8,7 +8,7 @@ import           Data.Text.IO                  as TIO
 import           Data.Traversable              as TR
 import           Data.ByteString.Lazy          as BL
 import           Data.List                     as DL
-import           Apps.Util as Util
+import           Apps.Util                     as Util
 import           Apps.Alacritty
 import           Options.Applicative
 import           System.Directory
@@ -16,61 +16,69 @@ import           Data.Semigroup                 ( (<>) )
 import           CLI
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Except
+import           Control.Exception.Safe
 
-getThemes :: FilePath -> ExceptT T.Text IO [Theme]
+data AppException = ThemeDecodeException | ThemeNotFoundException deriving (Show)
+
+instance Exception AppException
+
+apps :: [App]
+apps = [alacritty]
+
+getThemes :: (MonadThrow m, MonadIO m) => FilePath -> m [Theme]
 getThemes p = do
   contents <- liftIO $ BL.readFile p
-  -- ExceptT . return $ eitherDecode contents
-  -- ^ Does not work because eitherDecode returns String not T.Text
-  let decoded = eitherDecode contents
-  case decoded of
-    (Left err) -> throwE $ T.pack err
-    (Right x) -> return x
+  case eitherDecode contents of
+    (Left  err) -> throw ThemeDecodeException
+    (Right x  ) -> return x
 
-listThemes :: FilePath -> IO ()
+listThemes :: (MonadThrow m, MonadIO m) => FilePath -> m ()
 listThemes fp = do
-  themes <- runExceptT $ getThemes fp
+  themes <- getThemes fp
+  liftIO $ mapM_ (TIO.putStrLn . name) themes
 
-  case themes of
-    (Left  msg   ) -> TIO.putStrLn msg
-    (Right themes) -> mapM_ (TIO.putStrLn . name) themes
-
-activateTheme :: Theme -> IO ()
-activateTheme theme = do
-  -- TODO: remove alacritty and use apps
-  configs <- sequence $ configPaths alacritty
-  mapM_ configTransformer configs
+activateTheme :: (MonadIO m) => Theme -> m ()
+activateTheme theme = liftIO $ mapM_ transform apps
  where
-  configTransformer path = do
+  transform app = do
+    let transformFn = Util.configCreator app
+    configs <- liftIO . sequence $ configPaths app
+    mapM_ (createNewConfig transformFn) configs
+  createNewConfig transformFn path = do
     config <- TIO.readFile path
-    TIO.putStrLn $ Util.configCreator alacritty theme config
+    TIO.writeFile path $ transformFn theme config
 
-findTheme :: (Monad m) => [Theme] -> Util.ThemeName -> ExceptT T.Text m Theme
-findTheme ts tn =
-  let theme = DL.find ((==) tn . name) ts
-  in case theme of
-    Nothing -> throwE "Theme not found"
-    (Just theme') -> return theme'
+findTheme :: (MonadThrow m) => Util.ThemeName -> [Theme] -> m Theme
+findTheme tn ts = do
+  let result = DL.find ((==) tn . name) ts
+  case result of
+    Nothing  -> throw ThemeNotFoundException
+    (Just x) -> return x
 
-run :: CLIOptions -> ExceptT T.Text IO ()
+handleException :: (MonadIO m) => AppException -> m ()
+handleException e = liftIO $ TIO.putStrLn msg
+ where
+  msg = case e of
+    ThemeNotFoundException -> "Theme not found"
+    ThemeDecodeException   -> "Could not decode config file"
+
+run :: (MonadThrow m, MonadIO m) => CLIOptions -> m ()
 run (CLIOptions path cmd) = case cmd of
   ListThemes                    -> liftIO $ listThemes path
 
   (ActivateTheme selectedTheme) -> do
 
     themes <- getThemes path
-    theme <- findTheme themes $ T.pack selectedTheme
+    theme  <- findTheme (T.pack selectedTheme) themes
 
     liftIO $ activateTheme theme
+
     liftIO . TIO.putStrLn $ "Activated " `T.append` T.pack selectedTheme
 
 main :: IO ()
 main = do
   opts <- execParser
-      (info (helper <*> parseOptions)
-            (fullDesc <> header "I am foo" <> progDesc "Descriptive foo")
-      )
-  x <- runExceptT $ run opts
-  case x of
-    (Left err) -> TIO.putStrLn err
-    (Right x) -> TIO.putStrLn "yay"
+    (info (helper <*> parseOptions)
+          (fullDesc <> header "Teems" <> progDesc "Descriptive foo")
+    )
+  run opts `catch` handleException

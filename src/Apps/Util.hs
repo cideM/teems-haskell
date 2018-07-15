@@ -65,7 +65,5 @@ instance ToJSON Theme
 
 type Apps = Map.Map T.Text App
 
-makeOsPath :: FilePath -> IO FilePath
-makeOsPath p = do
-    configDir <- getXdgDirectory XdgConfig ""
-    return $ configDir ++ p
+getConfigPath :: FilePath -> IO FilePath
+getConfigPath = getXdgDirectory XdgConfig
