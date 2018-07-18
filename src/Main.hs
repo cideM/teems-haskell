@@ -6,6 +6,7 @@ import           Data.Aeson
 import           Data.Text                     as T
 import           Data.Text.IO                  as TIO
 import           Data.ByteString.Lazy          as BL
+import           Data.Foldable
 import           Data.List                     as DL
 import           Apps.Util                     as Util
 import           Apps.Alacritty
@@ -27,20 +28,20 @@ getThemes p = do
   contents <- liftIO $ BL.readFile p
   case eitherDecode contents of
     (Left  _) -> throw ThemeDecodeException
-    (Right x  ) -> return x
+    (Right x) -> return x
 
 listThemes :: (MonadThrow m, MonadIO m) => FilePath -> m ()
 listThemes fp = do
   themes <- getThemes fp
-  liftIO $ mapM_ (TIO.putStrLn . name) themes
+  liftIO $ traverse_ (TIO.putStrLn . name) themes
 
 activateTheme :: (MonadIO m) => Theme -> m ()
-activateTheme theme = liftIO $ mapM_ transform apps
+activateTheme theme = liftIO $ traverse_ transform apps
  where
   transform app = do
     let transformFn = Util.configCreator app
     configs <- liftIO . sequence $ configPaths app
-    mapM_ (createNewConfig transformFn) configs
+    traverse_ (createNewConfig transformFn) configs
   createNewConfig transformFn path = do
     config <- TIO.readFile path
     TIO.writeFile path $ transformFn theme config
