@@ -23,12 +23,19 @@ type ParseResult = (Color, ThemeColorGetter)
 
 type ThemeColorGetter = Colors -> T.Text
 
-parseColor :: Parser (Maybe ParseResult)
-parseColor = do
-    let xColorParser = string "color" >> some digit
+parseXConfig :: Parser (Maybe ParseResult)
+parseXConfig = do
     skipMany $ string "*."
-    color <- choice [string "foreground", string "background", xColorParser]
+    color <-
+        choice
+            [ string "foreground"
+            , string "background"
+            , string "color" >> some digit
+            ]
     skipMany $ some space
+    _ <- do
+        skipMany $ char '#'
+        skipMany . some $ letter <|> digit
     return $ case color of
         "foreground" -> Just ("foreground", Util.color15)
         "background" -> Just ("background", Util.color0)
@@ -53,15 +60,18 @@ parseColor = do
 configCreator :: Theme -> T.Text -> T.Text
 configCreator theme oldConfig = T.unlines . foldr run [] $ T.lines oldConfig
   where
-    run line acc =
-        let result = parseString parseColor mempty $ T.unpack line
-        in  case result of
-                (Success (Just (colorName, getter))) ->
-                    let newColor = getter (colors theme)
-                        newLine =
-                            "*."
-                                `T.append` colorName
-                                `T.append` ": "
-                                `T.append` newColor
-                    in  newLine : acc
-                Failure _ -> line : acc
+    run line acc
+        = let result = parseString parseXConfig mempty $ T.unpack line
+          in
+              case result of
+                  (Success (Just (colorName, getter))) ->
+                      let
+                          newColor = getter (colors theme)
+                          newLine =
+                              "*."
+                                  `T.append` colorName
+                                  `T.append` ": "
+                                  `T.append` newColor
+                      in
+                          newLine : acc
+                  Failure _ -> line : acc
