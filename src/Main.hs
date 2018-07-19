@@ -10,6 +10,7 @@ import           Data.Foldable
 import           Data.List                     as DL
 import           Apps.Util                     as Util
 import           Apps.Alacritty
+import           Apps.X
 import           Options.Applicative
 import           Data.Semigroup                 ( (<>) )
 import           CLI
@@ -21,7 +22,7 @@ data AppException = ThemeDecodeException | ThemeNotFoundException deriving (Show
 instance Exception AppException
 
 apps :: [App]
-apps = [alacritty]
+apps = [alacritty, x]
 
 getThemes :: (MonadThrow m, MonadIO m) => FilePath -> m [Theme]
 getThemes p = do
