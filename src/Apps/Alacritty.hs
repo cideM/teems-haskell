@@ -29,7 +29,7 @@ alacritty :: App
 alacritty = App
     { appName            = "alacritty"
     , Util.configCreator = Apps.Alacritty.configCreator
-    , configPaths        = fmap getConfigPath ["alacritty/alacritty.yml"]
+    , configPaths        = fmap Util.getConfigPath ["alacritty/alacritty.yml"]
     }
 
 parseMode :: Parser AlacrittyParseResults
@@ -92,10 +92,9 @@ getThemeColor theme color mode =
                 "magenta"    -> Util.color13
                 "cyan"       -> Util.color14
                 "white"      -> Util.color15
-                        -- Transform to alacritty format '0xFFFFFF'
+                            -- Transform to alacritty format '0xFFFFFF'
     in  "'0x" `T.append` T.tail (getter themeColors) `T.append` "'"
 
--- TODO: Vector
 configCreator :: Theme -> T.Text -> T.Text
 configCreator theme config = T.unlines . fst . foldr run ([], Normal) $ T.lines
     config
@@ -119,4 +118,4 @@ configCreator theme config = T.unlines . fst . foldr run ([], Normal) $ T.lines
                             `T.append` getThemeColor'
                                            (colorValue parsedColor)
                                            mode
-                (Failure err) -> (line : xs, mode)
+                (Failure _) -> (line : xs, mode)
