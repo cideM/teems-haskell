@@ -3,17 +3,16 @@
 module Apps.Util where
 
 import           Data.Aeson
+import           Data.Map
 import           Data.Text                     as T
-import           Options.Applicative
 import           GHC.Generics
 import           System.Directory
-import           System.IO
 
 type ParseErr = T.Text
 
 data App = App
     { appName :: T.Text
-    , configCreator :: Theme -> T.Text -> T.Text
+    , configCreator :: Theme' -> T.Text -> T.Text
     , configPaths :: [IO FilePath]
     }
 
@@ -51,6 +50,8 @@ data Theme = Theme
     { name :: ThemeName
     , colors :: Colors
     } deriving (Generic, Show)
+
+data Theme' = Theme' { name' :: ThemeName, colors' :: Map T.Text T.Text} deriving (Show)
 
 instance FromJSON Theme
 

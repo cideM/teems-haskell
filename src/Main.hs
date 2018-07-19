@@ -4,6 +4,7 @@ module Main where
 
 import           Data.Aeson
 import           Data.Text                     as T
+import           Data.Map.Strict
 import           Data.Text.IO                  as TIO
 import           Data.ByteString.Lazy          as BL
 import           Data.Foldable
@@ -24,19 +25,43 @@ instance Exception AppException
 apps :: [App]
 apps = [alacritty, x]
 
-getThemes :: (MonadThrow m, MonadIO m) => FilePath -> m [Theme]
+getThemes :: (MonadThrow m, MonadIO m) => FilePath -> m [Theme']
 getThemes p = do
   contents <- liftIO $ BL.readFile p
   case eitherDecode contents of
-    (Left  _) -> throw ThemeDecodeException
-    (Right x) -> return x
+    (Left  _     ) -> throw ThemeDecodeException
+    (Right themes) -> return $ fmap makeTheme' themes
+     where
+      makeTheme' theme =
+        let c  = colors theme
+            c' = fromList
+              [ ("foreground", foreground c)
+              , ("background", background c)
+              , ("color0"    , color0 c)
+              , ("color1"    , color1 c)
+              , ("color2"    , color2 c)
+              , ("color3"    , color3 c)
+              , ("color4"    , color4 c)
+              , ("color5"    , color5 c)
+              , ("color6"    , color6 c)
+              , ("color7"    , color7 c)
+              , ("color8"    , color8 c)
+              , ("color9"    , color9 c)
+              , ("color10"   , color10 c)
+              , ("color11"   , color11 c)
+              , ("color12"   , color12 c)
+              , ("color13"   , color13 c)
+              , ("color14"   , color14 c)
+              , ("color15"   , color15 c)
+              ]
+        in  Theme' {name' = name theme, colors' = c'}
 
 listThemes :: (MonadThrow m, MonadIO m) => FilePath -> m ()
 listThemes fp = do
   themes <- getThemes fp
-  liftIO $ traverse_ (TIO.putStrLn . name) themes
+  liftIO $ traverse_ (TIO.putStrLn . name') themes
 
-activateTheme :: (MonadIO m) => Theme -> m ()
+activateTheme :: (MonadIO m) => Theme' -> m ()
 activateTheme theme = liftIO $ traverse_ transform apps
  where
   transform app = do
@@ -47,9 +72,9 @@ activateTheme theme = liftIO $ traverse_ transform apps
     config <- TIO.readFile path
     TIO.writeFile path $ transformFn theme config
 
-findTheme :: (MonadThrow m) => Util.ThemeName -> [Theme] -> m Theme
+findTheme :: (MonadThrow m) => Util.ThemeName -> [Theme'] -> m Theme'
 findTheme tn ts = do
-  let result = DL.find ((==) tn . name) ts
+  let result = DL.find ((==) tn . name') ts
   case result of
     Nothing  -> throw ThemeNotFoundException
     (Just x) -> return x

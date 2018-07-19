@@ -6,6 +6,7 @@ import           Data.Text                     as T
                                          hiding ( foldr )
 import           Apps.Util                     as Util
 import           Text.Parser.Combinators
+import           Data.Map.Strict               as DM
 import           Text.Trifecta
 import           Data.List                      ( foldr )
 
@@ -56,7 +57,7 @@ parseColor = try $ do
         , string "background"
         , string "foreground"
         ]
-    _ <- char ':'
+    _       <- char ':'
     spaces2 <- some space
     return . ColorResult $ ParsedColor
         { leadingSpace = T.pack spaces1
@@ -64,39 +65,38 @@ parseColor = try $ do
         , spaceBetween = T.pack spaces2
         }
 
--- TODO: Throw on unknown color
-getThemeColor :: Theme -> T.Text -> Mode -> T.Text
-getThemeColor theme color mode =
-    let themeColors = colors theme
-        getter      = case mode of
-            Normal -> case color of
-                "background" -> Util.color0
-                "foreground" -> Util.color15
-                "black"      -> Util.color0
-                "red"        -> Util.color1
-                "green"      -> Util.color2
-                "yellow"     -> Util.color3
-                "blue"       -> Util.color4
-                "magenta"    -> Util.color5
-                "cyan"       -> Util.color6
-                "white"      -> Util.color7
-            Bright -> case color of
-                "background" -> Util.color0
-                "foreground" -> Util.color15
-                "black"      -> Util.color8
-                "red"        -> Util.color9
-                "green"      -> Util.color10
-                "yellow"     -> Util.color11
-                "blue"       -> Util.color12
-                "magenta"    -> Util.color13
-                "cyan"       -> Util.color14
-                "white"      -> Util.color15
-                            -- Transform to alacritty format '0xFFFFFF'
-    in  "'0x" `T.append` T.tail (getter themeColors) `T.append` "'"
+getThemeColor :: Theme' -> T.Text -> Mode -> Maybe T.Text
+getThemeColor theme color mode = do
+    let c = colors' theme
+    newColor <- case mode of
+        -- put into separate map
+        Normal -> case color of
+            "background" -> DM.lookup "background" c
+            "foreground" -> DM.lookup "foreground" c
+            "black"      -> DM.lookup "color0" c
+            "red"        -> DM.lookup "color1" c
+            "green"      -> DM.lookup "color2" c
+            "yellow"     -> DM.lookup "color3" c
+            "blue"       -> DM.lookup "color4" c
+            "magenta"    -> DM.lookup "color5" c
+            "cyan"       -> DM.lookup "color6" c
+            "white"      -> DM.lookup "color7" c
+        Bright -> case color of
+            "background" -> DM.lookup "color0" c
+            "foreground" -> DM.lookup "color15" c
+            "black"      -> DM.lookup "color8" c
+            "red"        -> DM.lookup "color9" c
+            "green"      -> DM.lookup "color10" c
+            "yellow"     -> DM.lookup "color11" c
+            "blue"       -> DM.lookup "color12" c
+            "magenta"    -> DM.lookup "color13" c
+            "cyan"       -> DM.lookup "color14" c
+            "white"      -> DM.lookup "color15" c
+    return $ "'0x" `T.append` T.tail newColor `T.append` "'" -- Transform to alacritty format '0xFFFFFF'
 
-configCreator :: Theme -> T.Text -> T.Text
-configCreator theme config = T.unlines . fst . foldr run ([], Normal) $ T.lines
-    config
+configCreator :: Theme' -> T.Text -> T.Text
+configCreator theme config =
+    T.unlines . fst . Data.List.foldr run ([], Normal) $ T.lines config
   where
     run currentLine (xs, mode) =
         let parser         = choice [parseMode, parseColor]
@@ -104,17 +104,20 @@ configCreator theme config = T.unlines . fst . foldr run ([], Normal) $ T.lines
             getThemeColor' = getThemeColor theme
         in  case result of
                 -- Keep track of whether we're parsing normal or bright colors
-                (Success (ModeResult  newMode    )) -> (currentLine : xs, newMode)
+                (Success (ModeResult newMode)) -> (currentLine : xs, newMode)
                 (Success (ColorResult parsedColor)) -> (newLine : xs, mode)
                   where
                     newLine =
-                        -- Keep whitespace until first character because
-                        -- indentation matters in yaml
-                        leadingSpace parsedColor
-                            `T.append` colorValue parsedColor
-                            `T.append` ": "
-                            `T.append` spaceBetween parsedColor
-                            `T.append` getThemeColor'
-                                           (colorValue parsedColor)
-                                           mode
+                        let newColor' =
+                                getThemeColor' (colorValue parsedColor) mode
+                        in  case newColor' of
+                                (Just newColor) ->
+                                    -- Keep whitespace until first character because
+                                    -- indentation matters in yaml
+                                    leadingSpace parsedColor
+                                        `T.append` colorValue parsedColor
+                                        `T.append` ": "
+                                        `T.append` spaceBetween parsedColor
+                                        `T.append` newColor
+                                Nothing -> currentLine
                 (Failure _) -> (currentLine : xs, mode)
