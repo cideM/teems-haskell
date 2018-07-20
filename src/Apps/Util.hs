@@ -57,5 +57,9 @@ instance FromJSON Theme
 
 instance ToJSON Theme
 
+type Color = T.Text
+
+type Whitespace = T.Text
+
 getConfigPath :: FilePath -> IO FilePath
 getConfigPath = getXdgDirectory XdgConfig

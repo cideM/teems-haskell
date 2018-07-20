@@ -17,15 +17,10 @@ x = App
     , configPaths        = fmap Util.getConfigPath [".Xresources"]
     }
 
-type Color = T.Text
-type ParseResult = Color
-
-type ThemeColorGetter = Colors -> T.Text
-
-parseXConfig :: Parser ParseResult
+parseXConfig :: Parser Color
 parseXConfig = do
     skipMany $ string "*."
-    color <- choice
+    color <- T.pack <$> choice
         [ string "foreground"
         , string "background"
         , do
@@ -37,7 +32,7 @@ parseXConfig = do
     _ <- do
         skipMany $ char '#'
         skipMany . some $ letter <|> digit
-    return $ T.pack color
+    return color
 
 configCreator :: Theme' -> T.Text -> T.Text
 configCreator theme oldConfig = T.unlines . Data.List.foldr run [] $ T.lines

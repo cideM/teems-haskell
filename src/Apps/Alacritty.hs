@@ -3,7 +3,6 @@
 module Apps.Alacritty where
 
 import           Data.Text                     as T
-                                         hiding ( foldr )
 import           Apps.Util                     as Util
 import           Text.Parser.Combinators
 import           Data.Map.Strict               as DM
@@ -11,10 +10,6 @@ import           Text.Trifecta
 import           Data.List                      ( foldr )
 
 data Mode = Normal | Bright deriving (Show)
-
-type Color = T.Text
-
-type Whitespace = T.Text
 
 data ParsedColor = ParsedColor {
     leadingSpace :: Whitespace,
