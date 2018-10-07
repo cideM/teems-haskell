@@ -5,7 +5,6 @@ module Main where
 import           Lib
 import           Data.Aeson
 import           Data.Text                     as T
-import           Data.Map.Strict
 import           Data.Text.IO                  as TIO
 import           Data.ByteString.Lazy          as BL
 import           Data.Foldable

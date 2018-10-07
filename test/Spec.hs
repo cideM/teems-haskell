@@ -4,19 +4,22 @@ import           Alacritty
 import           Test.Hspec
 import           Text.Parser.Combinators
 import           Text.Trifecta
+import           Text.PrettyPrint.ANSI.Leijen
 
-prs p = parseString p mempty
 
-maybeSuccess :: Result a -> Either String a
-maybeSuccess (Success a) = Right a
-maybeSuccess (Failure err) = Left . show $ _errDoc err
+prs :: Parser a -> String -> Either String a
+prs p s =
+  let r = parseString p mempty s
+  in  case r of
+        (Success a) -> Right a
+        (Failure errInfo) -> Left . show . plain $ _errDoc errInfo
 
 main :: IO ()
 main = hspec $ do
   describe "parseMode" $ do
     it "should parse bright"
-      $ let m = maybeSuccess $ prs parseMode "bright: # this is just foo"
-        in  m `shouldBe` Right (Mode' Bright)
+      $          prs parseMode "bright: # this is just foo"
+      `shouldBe` Right (Mode' Bright)
     it "should parse normal"
-      $ let m = maybeSuccess $ prs parseMode "normal: # this is just foo"
-        in  m `shouldBe` Right (Mode' Normal)
+      $          prs parseMode "nor2mal: # this is just foo"
+      `shouldBe` Right (Mode' Normal)
