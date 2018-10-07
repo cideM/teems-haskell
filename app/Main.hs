@@ -2,6 +2,7 @@
 
 module Main where
 
+import           Lib
 import           Data.Aeson
 import           Data.Text                     as T
 import           Data.Map.Strict
@@ -9,12 +10,10 @@ import           Data.Text.IO                  as TIO
 import           Data.ByteString.Lazy          as BL
 import           Data.Foldable
 import           Data.List                     as DL
-import           Apps.Util                     as Util
-import           Apps.Alacritty
-import           Apps.X
+import           Alacritty
+import           X
 import           Options.Applicative
 import           Data.Semigroup                 ( (<>) )
-import           CLI
 import           Control.Monad.IO.Class
 import           Control.Exception.Safe
 
@@ -22,62 +21,46 @@ data AppException = ThemeDecodeException | ThemeNotFoundException deriving (Show
 
 instance Exception AppException
 
+data Command = ListThemes | ActivateTheme ThemeName
+
+type ConfigPath = String
+
+data CLIOptions = CLIOptions ConfigPath Command
+
+type ParseErr = T.Text
+
 apps :: [App]
 apps = [alacritty, x]
 
-getThemes :: (MonadThrow m, MonadIO m) => FilePath -> m [Theme']
+getThemes :: (MonadThrow m, MonadIO m) => FilePath -> m [Theme]
 getThemes p = do
   contents <- liftIO $ BL.readFile p
   case eitherDecode contents of
     (Left  _     ) -> throw ThemeDecodeException
-    (Right themes) -> return $ fmap makeTheme' themes
-     where
-      makeTheme' theme =
-        let c  = colors theme
-            c' = fromList
-              [ ("foreground", foreground c)
-              , ("background", background c)
-              , ("color0"    , color0 c)
-              , ("color1"    , color1 c)
-              , ("color2"    , color2 c)
-              , ("color3"    , color3 c)
-              , ("color4"    , color4 c)
-              , ("color5"    , color5 c)
-              , ("color6"    , color6 c)
-              , ("color7"    , color7 c)
-              , ("color8"    , color8 c)
-              , ("color9"    , color9 c)
-              , ("color10"   , color10 c)
-              , ("color11"   , color11 c)
-              , ("color12"   , color12 c)
-              , ("color13"   , color13 c)
-              , ("color14"   , color14 c)
-              , ("color15"   , color15 c)
-              ]
-        in  Theme' {name' = name theme, colors' = c'}
+    (Right themes) -> return themes
 
 listThemes :: (MonadThrow m, MonadIO m) => FilePath -> m ()
 listThemes fp = do
   themes <- getThemes fp
-  liftIO $ traverse_ (TIO.putStrLn . name') themes
+  liftIO $ traverse_ (TIO.putStrLn . name) themes
 
-activateTheme :: (MonadIO m) => Theme' -> m ()
+activateTheme :: (MonadIO m) => Theme -> m ()
 activateTheme theme = liftIO $ traverse_ transform apps
  where
   transform app = do
-    let transformFn = Util.configCreator app
+    let transformFn = Lib.configCreator app
     configs <- liftIO . sequence $ configPaths app
     traverse_ (createNewConfig transformFn) configs
   createNewConfig transformFn path = do
     config <- TIO.readFile path
     TIO.writeFile path $ transformFn theme config
 
-findTheme :: (MonadThrow m) => Util.ThemeName -> [Theme'] -> m Theme'
+findTheme :: (MonadThrow m) => ThemeName -> [Theme] -> m Theme
 findTheme tn ts = do
-  let result = DL.find ((==) tn . name') ts
+  let result = DL.find ((==) tn . name) ts
   case result of
     Nothing  -> throw ThemeNotFoundException
-    (Just x) -> return x
+    (Just a) -> return a
 
 handleException :: (MonadIO m) => AppException -> m ()
 handleException e = liftIO $ TIO.putStrLn msg
@@ -86,6 +69,29 @@ handleException e = liftIO $ TIO.putStrLn msg
     ThemeNotFoundException -> "Theme not found"
     ThemeDecodeException   -> "Could not decode config file"
 
+
+parseConfigPath :: Parser ConfigPath
+parseConfigPath =
+  strOption $ short 'f' <> long "config" <> metavar "CONFIGPATH" <> help
+    "Path to config file containing the themes"
+
+parseListThemes :: Parser Command
+parseListThemes = pure ListThemes
+
+parseActivateTheme :: Parser Command
+parseActivateTheme = ActivateTheme <$> argument str (metavar "THEME NAME")
+
+parseCommands :: Parser Command
+parseCommands =
+  subparser
+    $  (command "list" . info parseListThemes $ progDesc "List all themes")
+    <> (command "activate" . info parseActivateTheme $ progDesc
+         "Activate a theme"
+       )
+
+parseOptions :: Parser CLIOptions
+parseOptions = CLIOptions <$> parseConfigPath <*> parseCommands
+
 run :: (MonadThrow m, MonadIO m) => CLIOptions -> m ()
 run (CLIOptions path cmd) = case cmd of
   ListThemes                    -> liftIO $ listThemes path
@@ -93,11 +99,11 @@ run (CLIOptions path cmd) = case cmd of
   (ActivateTheme selectedTheme) -> do
 
     themes <- getThemes path
-    theme  <- findTheme (T.pack selectedTheme) themes
+    theme  <- findTheme selectedTheme themes
 
     liftIO $ activateTheme theme
 
-    liftIO . TIO.putStrLn $ "Activated " `T.append` T.pack selectedTheme
+    liftIO . TIO.putStrLn $ "Activated " `T.append` selectedTheme
 
 main :: IO ()
 main = do
