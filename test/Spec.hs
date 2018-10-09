@@ -21,37 +21,37 @@ prs p s =
 main :: IO ()
 main = hspec $ do
   let theme = Theme "foo" $ DM.fromList [("foreground", "#ffffff"),("background", "#bbbbbb"),("color0", "#000000"), ("color1", "#111111"), ("color2", "#222222"), ("color3", "#333333"), ("color4", "#444444"), ("color5", "#555555"), ("color6", "#666666"), ("color7", "#777777"), ("color8", "#888888"), ("color9", "#999999"), ("color10", "#101010"), ("color11", "#111111"), ("color12", "#121212"), ("color13", "#131313"), ("color14", "#141414"), ("color15", "#151515")]
-  describe "parseMode" $ do
+  describe "modeP" $ do
     it "should parse bright"
-      $          prs parseMode "bright: # this is just foo"
+      $          prs modeP "bright: # this is just foo"
       `shouldBe` Just (Mode' Bright)
     it "should parse normal"
-      $          prs parseMode "normal: # this is just foo"
+      $          prs modeP "normal: # this is just foo"
       `shouldBe` Just (Mode' Normal)
-  describe "parseColor" $ do
+  describe "colorP" $ do
     it "should parse color names"
-      $          prs parseColor "      black: '0x000000'"
+      $          prs colorP "      black: '0x000000'"
       `shouldBe` Just (Color' "black")
     it "should skip commented lines"
-      $          prs parseColor "#  black: '0x000000'"
+      $          prs colorP "#  black: '0x000000'"
       `shouldBe` Nothing
-  describe "parseColorLine" $ do
+  describe "colorLineP" $ do
     it "should parse trailing and leading content of a color line"
-      $          prs parseColorLine "   black: '0x000000' # foo"
+      $          prs colorLineP "   black: '0x000000' # foo"
       `shouldBe` Just ("   black: ", " # foo")
     it "should skip commented lines"
-      $          prs parseColorLine "#   black: '0x000000' # foo"
+      $          prs colorLineP "#   black: '0x000000' # foo"
       `shouldBe` Nothing
   describe "getThemeColor" $ do
     it "should return normal colors" $
       getThemeColor theme "black" Normal `shouldBe` Just "#000000"
     it "should return bright colors" $
       getThemeColor theme "black" Bright `shouldBe` Just "#888888"
-  describe "getNewlineFromColorName" $ do
+  describe "makeNewline" $ do
     it "should return newline with color replaced" $
-      getNewlineFromColorName theme "black" Normal "black: '0xFFFFFF'" `shouldBe` "black: '0x000000'"
+      makeNewline theme "black" Normal "black: '0xFFFFFF'" `shouldBe` "black: '0x000000'"
     it "should return newline with color replaced and preserve leading and trailing content" $
-      getNewlineFromColorName theme "black" Normal "   black: '0xFFFFFF' #foo" `shouldBe` "   black: '0x000000' #foo"
+      makeNewline theme "black" Normal "   black: '0xFFFFFF' #foo" `shouldBe` "   black: '0x000000' #foo"
   describe "configCreator'"
     $ it "should return a new config based on the theme"
     $ do

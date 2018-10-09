@@ -27,8 +27,8 @@ alacritty = App
   , configPaths   = fmap getConfigPath ["alacritty/alacritty.yml"]
   }
 
-parseMode :: Parser Alacritty
-parseMode = try $ do
+modeP :: Parser Alacritty
+modeP = try $ do
   skipMany space
   mode <- string "bright:" <|> string "normal:"
   skipMany space
@@ -36,8 +36,8 @@ parseMode = try $ do
     "bright:" -> return $ Mode' Bright
     _         -> return $ Mode' Normal
 
-parseColor :: Parser Alacritty
-parseColor = try $ do
+colorP :: Parser Alacritty
+colorP = try $ do
   skipMany space
   color <- choice
     [ string "black"
@@ -53,8 +53,8 @@ parseColor = try $ do
     ]
   return . Color' $ T.pack color
 
-parseColorLine :: Parser (T.Text, T.Text)
-parseColorLine = do
+colorLineP :: Parser (T.Text, T.Text)
+colorLineP = do
   leading <- T.pack
     <$> manyTill (choice [letter, char ':', space]) (try (string "'0x"))
   -- Skip the actual color we want to replace, as it's discarded anyway
@@ -101,9 +101,9 @@ getThemeColor theme cName mode =
         value <- DM.lookup cName map'
         DM.lookup value colors'
 
-getNewlineFromColorName :: Theme -> ColorName -> Mode -> T.Text -> T.Text
-getNewlineFromColorName t c m oldLine = case getThemeColor t c m of
-  (Just color) -> case parseText parseColorLine oldLine of
+makeNewline :: Theme -> ColorName -> Mode -> T.Text -> T.Text
+makeNewline t c m oldLine = case getThemeColor t c m of
+  (Just color) -> case parseText colorLineP oldLine of
     (Success (leading, trailing)) ->
       leading
         `T.append` "'0x"
@@ -121,9 +121,9 @@ configCreator' :: Theme -> Config -> Config
 configCreator' theme config = T.unlines $ snd newLines
  where
   newLines = DL.foldl run (Normal, []) $ T.lines config
-  lineP    = choice [parseMode, parseColor]
+  lineP    = choice [modeP, colorP]
   run (mode, xs) line = case parseText lineP line of
     (Success (Mode'  newMode)) -> (newMode, xs ++ [line])
     (Success (Color' c      )) -> (mode, xs ++ [newLine])
-      where newLine = getNewlineFromColorName theme c mode line
+      where newLine = makeNewline theme c mode line
     (Failure _) -> (mode, xs ++ [line])
