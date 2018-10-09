@@ -101,8 +101,8 @@ getThemeColor theme cName mode =
         value <- DM.lookup cName map'
         DM.lookup value colors'
 
-getNewline :: ColorValue -> T.Text -> T.Text
-getNewline color old = case parseString parseColorLine mempty $ T.unpack old of
+replaceColor :: ColorValue -> T.Text -> T.Text
+replaceColor color old = case parseString parseColorLine mempty $ T.unpack old of
   (Success (leading, trailing)) ->
     leading
       `T.append` "'0x"
@@ -115,7 +115,7 @@ getNewlineFromColorName :: Theme -> ColorName -> Mode -> T.Text -> T.Text
 getNewlineFromColorName t c m oldLine =
   let newColor = getThemeColor t c m
   in  case newColor of
-        (Just c') -> getNewline c' oldLine
+        (Just c') -> replaceColor c' oldLine
         Nothing   -> oldLine
 
 -- TODO Use vector, maybe?
