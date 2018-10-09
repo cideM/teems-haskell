@@ -101,30 +101,28 @@ getThemeColor theme cName mode =
         value <- DM.lookup cName map'
         DM.lookup value colors'
 
-replaceColor :: ColorValue -> T.Text -> T.Text
-replaceColor color old = case parseString parseColorLine mempty $ T.unpack old of
-  (Success (leading, trailing)) ->
-    leading
-      `T.append` "'0x"
-      `T.append` T.tail color
-      `T.append` "'"
-      `T.append` trailing
-  (Failure _) -> old
-
 getNewlineFromColorName :: Theme -> ColorName -> Mode -> T.Text -> T.Text
-getNewlineFromColorName t c m oldLine =
-  let newColor = getThemeColor t c m
-  in  case newColor of
-        (Just c') -> replaceColor c' oldLine
-        Nothing   -> oldLine
+getNewlineFromColorName t c m oldLine = case getThemeColor t c m of
+  (Just color) -> case parseText parseColorLine oldLine of
+    (Success (leading, trailing)) ->
+      leading
+        `T.append` "'0x"
+        `T.append` T.tail color
+        `T.append` "'"
+        `T.append` trailing
+    (Failure _) -> oldLine
+  Nothing -> oldLine
+
+parseText :: Parser a -> T.Text -> Result a
+parseText p = parseString p mempty . T.unpack
 
 -- TODO Use vector, maybe?
 configCreator' :: Theme -> Config -> Config
 configCreator' theme config = T.unlines $ snd newLines
  where
   newLines = DL.foldl run (Normal, []) $ T.lines config
-  parser   = choice [parseMode, parseColor]
-  run (mode, xs) line = case parseString parser mempty $ T.unpack line of
+  lineP    = choice [parseMode, parseColor]
+  run (mode, xs) line = case parseText lineP line of
     (Success (Mode'  newMode)) -> (newMode, xs ++ [line])
     (Success (Color' c      )) -> (mode, xs ++ [newLine])
       where newLine = getNewlineFromColorName theme c mode line

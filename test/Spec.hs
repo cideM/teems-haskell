@@ -47,13 +47,11 @@ main = hspec $ do
       getThemeColor theme "black" Normal `shouldBe` Just "#000000"
     it "should return bright colors" $
       getThemeColor theme "black" Bright `shouldBe` Just "#888888"
-  describe "replaceColor"
-    $          it "should return new line with color replaced"
-    $          replaceColor "#000000" "    black: '0xFFFFFF' # foo"
-    `shouldBe` "    black: '0x000000' # foo"
-  describe "getNewlineFromColorName" $
+  describe "getNewlineFromColorName" $ do
     it "should return newline with color replaced" $
       getNewlineFromColorName theme "black" Normal "black: '0xFFFFFF'" `shouldBe` "black: '0x000000'"
+    it "should return newline with color replaced and preserve leading and trailing content" $
+      getNewlineFromColorName theme "black" Normal "   black: '0xFFFFFF' #foo" `shouldBe` "   black: '0x000000' #foo"
   describe "configCreator'"
     $ it "should return a new config based on the theme"
     $ do
