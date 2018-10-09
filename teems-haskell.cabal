@@ -24,7 +24,6 @@ library
       base >=4.7 && <5
     , trifecta
     , directory
-    , parsers
     , aeson
     , containers
     , text
@@ -44,9 +43,6 @@ executable teems-haskell-exe
                      , bytestring
                      , optparse-applicative
                      , trifecta
-                     , parsers
-                     , raw-strings-qq
-                     , transformers
                      , safe-exceptions
                      , teems-haskell
 
@@ -64,4 +60,6 @@ test-suite teems-haskell-test
     , trifecta
     , parsers
     , ansi-wl-pprint
+    , containers
+    , raw-strings-qq
   default-language: Haskell2010

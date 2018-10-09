@@ -5,7 +5,6 @@ module X where
 import           Lib
 import           Data.Text                     as T
 import           Data.Map                      as DM
-import           Text.Parser.Combinators
 import           Text.Trifecta
 import           Control.Applicative
 import           Data.List                      ( foldr )

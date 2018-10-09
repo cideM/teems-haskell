@@ -67,6 +67,7 @@ handleException e = liftIO $ TIO.putStrLn msg
   msg = case e of
     ThemeNotFoundException -> "Theme not found"
     ThemeDecodeException   -> "Could not decode config file"
+    _ -> "Unhandled exception"
 
 
 parseConfigPath :: Parser ConfigPath

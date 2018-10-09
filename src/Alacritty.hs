@@ -4,7 +4,6 @@ module Alacritty where
 
 import           Lib
 import           Data.Text                     as T
-import           Text.Parser.Combinators
 import           Data.Map.Strict               as DM
 import           Text.Trifecta           hiding ( line )
 import           Control.Applicative
@@ -19,6 +18,7 @@ instance Eq Alacritty where
   (==) (Color' _) (Mode' _) = False
   (==) (Mode' a) (Mode' b) = a == b
   (==) (Color' a) (Color' b) = a == b
+  (==) (Mode' _) (Color' _) = False
 
 alacritty :: App
 alacritty = App
@@ -55,7 +55,8 @@ parseColor = try $ do
 
 parseColorLine :: Parser (T.Text, T.Text)
 parseColorLine = do
-  leading  <- T.pack <$> manyTill anyChar (try (string "'0x"))
+  leading <- T.pack
+    <$> manyTill (choice [letter, char ':', space]) (try (string "'0x"))
   -- Skip the actual color we want to replace, as it's discarded anyway
   _        <- Text.Trifecta.count 6 alphaNum
   _        <- char '\''
@@ -94,7 +95,7 @@ getThemeColor :: Theme -> AlacrittyColorName -> Mode -> Maybe ColorValue
 getThemeColor theme cName mode =
   let map' = case mode of
         Bright -> bright
-        _      -> normal
+        Normal -> normal
       colors' = colors theme
   in  do
         value <- DM.lookup cName map'
@@ -110,22 +111,21 @@ getNewline color old = case parseString parseColorLine mempty $ T.unpack old of
       `T.append` trailing
   (Failure _) -> old
 
+getNewlineFromColorName :: Theme -> ColorName -> Mode -> T.Text -> T.Text
+getNewlineFromColorName t c m oldLine =
+  let newColor = getThemeColor t c m
+  in  case newColor of
+        (Just c') -> getNewline c' oldLine
+        Nothing   -> oldLine
+
+-- TODO Use vector, maybe?
 configCreator' :: Theme -> Config -> Config
-configCreator' theme config =
-  let lines'   = T.lines config
-      newLines = DL.foldr run ([], Normal) lines'
-  in  T.unlines . fst $ newLines
+configCreator' theme config = T.unlines $ snd newLines
  where
-  parser         = choice [parseMode, parseColor]
-  getThemeColor' = getThemeColor theme
-  run line (xs, mode) =
-    let unchanged = (line : xs, mode)
-    in  case parseString parser mempty $ T.unpack line of
-          (Success (Mode' newMode)) -> (line : xs, newMode)
-          (Success (Color' c)) ->
-            let newColor = getThemeColor' c mode
-            in  case newColor of
-                  (Just c') ->
-                    let newLine = getNewline c' line in (newLine : xs, mode)
-                  Nothing -> unchanged
-          (Failure _) -> unchanged
+  newLines = DL.foldl run (Normal, []) $ T.lines config
+  parser   = choice [parseMode, parseColor]
+  run (mode, xs) line = case parseString parser mempty $ T.unpack line of
+    (Success (Mode'  newMode)) -> (newMode, xs ++ [line])
+    (Success (Color' c      )) -> (mode, xs ++ [newLine])
+      where newLine = getNewlineFromColorName theme c mode line
+    (Failure _) -> (mode, xs ++ [line])
