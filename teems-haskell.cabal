@@ -26,6 +26,7 @@ library
     , directory
     , aeson
     , containers
+    , parsers
     , text
   default-language: Haskell2010
 
@@ -43,6 +44,7 @@ executable teems-haskell-exe
                      , bytestring
                      , optparse-applicative
                      , trifecta
+                     , parsers
                      , safe-exceptions
                      , teems-haskell
 

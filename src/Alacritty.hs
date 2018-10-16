@@ -9,16 +9,23 @@ import           Text.Trifecta           hiding ( line )
 import           Control.Applicative
 import           Data.List                     as DL
 
-data Mode = Normal | Bright deriving (Show, Eq)
 type AlacrittyColorName = T.Text
 type Config = T.Text
-data Alacritty = Color' ColorName | Mode' Mode deriving (Show)
 
-instance Eq Alacritty where
-  (==) (Color' _) (Mode' _) = False
-  (==) (Mode' a) (Mode' b) = a == b
-  (==) (Color' a) (Color' b) = a == b
-  (==) (Mode' _) (Color' _) = False
+data AlacrittyMode = Normal | Bright deriving (Show, Eq)
+data AlacrittyLine = AlacrittyLine {
+  _leading  :: T.Text,
+  _color    :: AlacrittyColorName,
+  _middle   :: T.Text,
+  _trailing :: T.Text
+} deriving (Show, Eq)
+data Alacritty =  Line AlacrittyLine | Mode AlacrittyMode deriving (Show, Eq)
+
+-- instance Eq Alacritty where
+--   (==) (color _) (Mode' _) = False
+--   (==) (Mode' a) (Mode' b) = a == b
+--   (==) (color a) (color b) = a == b
+--   (==) (Mode' _) (color _) = False
 
 alacritty :: App
 alacritty = App
@@ -33,35 +40,34 @@ modeP = try $ do
   mode <- string "bright:" <|> string "normal:"
   skipMany space
   case mode of
-    "bright:" -> return $ Mode' Bright
-    _         -> return $ Mode' Normal
+    "bright:" -> return $ Mode Bright
+    _         -> return $ Mode Normal
 
-colorP :: Parser Alacritty
-colorP = try $ do
-  skipMany space
-  color <- choice
-    [ string "black"
-    , string "red"
-    , string "green"
-    , string "yellow"
-    , string "blue"
-    , string "magenta"
-    , string "cyan"
-    , string "white"
-    , string "background"
-    , string "foreground"
-    ]
-  return . Color' $ T.pack color
+alacrittyColorNames :: [String]
+alacrittyColorNames =
+  [ "black"
+  , "red"
+  , "green"
+  , "yellow"
+  , "blue"
+  , "magenta"
+  , "cyan"
+  , "white"
+  , "background"
+  , "foreground"
+  ]
 
-colorLineP :: Parser (T.Text, T.Text)
+colorLineP :: Parser Alacritty
 colorLineP = do
-  leading <- T.pack
+  leading <- T.pack <$> many space
+  color   <- T.pack <$> (choice $ string <$> alacrittyColorNames)
+  middle  <- T.pack
     <$> manyTill (choice [letter, char ':', space]) (try (string "'0x"))
   -- Skip the actual color we want to replace, as it's discarded anyway
   _        <- Text.Trifecta.count 6 alphaNum
   _        <- char '\''
   trailing <- T.pack <$> manyTill anyChar eof
-  return (leading, trailing)
+  return . Line $ AlacrittyLine leading color middle trailing
 
 normal :: DM.Map AlacrittyColorName ColorName
 normal = DM.fromList
@@ -91,39 +97,41 @@ bright = DM.fromList
   , ("white"     , "color15")
   ]
 
-getThemeColor :: Theme -> AlacrittyColorName -> Mode -> Maybe ColorValue
-getThemeColor theme cName mode =
+valueFromTheme
+  :: Theme -> AlacrittyMode -> AlacrittyColorName -> Maybe ColorValue
+valueFromTheme theme mode color =
   let map' = case mode of
         Bright -> bright
         Normal -> normal
       colors' = colors theme
   in  do
-        value <- DM.lookup cName map'
+        value <- DM.lookup color map'
         DM.lookup value colors'
 
-makeNewline :: Theme -> ColorName -> Mode -> T.Text -> T.Text
-makeNewline t c m oldLine = case getThemeColor t c m of
-  (Just color) -> case parseText colorLineP oldLine of
-    (Success (leading, trailing)) ->
-      leading
-        `T.append` "'0x"
-        `T.append` T.tail color
-        `T.append` "'"
-        `T.append` trailing
-    (Failure _) -> oldLine
-  Nothing -> oldLine
-
-parseText :: Parser a -> T.Text -> Result a
-parseText p = parseString p mempty . T.unpack
+makeNewline :: ColorName -> AlacrittyLine -> T.Text
+makeNewline value (AlacrittyLine leading color middle trailing) =
+  leading
+    `T.append` color
+    `T.append` middle
+    `T.append` "'0x"
+    `T.append` T.tail value
+    `T.append` "'"
+    `T.append` trailing
 
 -- TODO Use vector, maybe?
 configCreator' :: Theme -> Config -> Config
-configCreator' theme config = T.unlines $ snd newLines
+configCreator' theme config =
+  T.unlines . snd $ DL.foldl run (Normal, []) $ T.lines config
  where
-  newLines = DL.foldl run (Normal, []) $ T.lines config
-  lineP    = choice [modeP, colorP]
-  run (mode, xs) line = case parseText lineP line of
-    (Success (Mode'  newMode)) -> (newMode, xs ++ [line])
-    (Success (Color' c      )) -> (mode, xs ++ [newLine])
-      where newLine = makeNewline theme c mode line
-    (Failure _) -> (mode, xs ++ [line])
+  lineP = choice [modeP, colorLineP]
+  run (mode, xs) line =
+    let getNewValue = valueFromTheme theme mode
+    in  case parseText lineP line of
+          (Success (Line l@AlacrittyLine { _color = color })) ->
+            (mode, xs ++ [line'])
+           where
+            line' = case getNewValue color of
+              (Just value) -> makeNewline value l
+              Nothing      -> line
+          (Success (Mode m)) -> (m, xs ++ [line])
+          (Failure _       ) -> (mode, xs ++ [line])

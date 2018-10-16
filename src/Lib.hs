@@ -5,6 +5,7 @@ module Lib where
 
 import           Data.Aeson
 import           Data.Text as T
+import           Text.Trifecta
 import           System.Directory
 import           GHC.Generics
 import           Data.Map.Strict
@@ -35,3 +36,14 @@ instance ToJSON Theme
 
 getConfigPath :: FilePath -> IO FilePath
 getConfigPath = getXdgDirectory XdgConfig
+
+parseText :: Parser a -> T.Text -> Text.Trifecta.Result a
+parseText p = parseString p mempty . T.unpack
+
+lengthDesc :: (Foldable t) => t a -> t a -> Ordering
+lengthDesc a b =
+  let cmp x y | x < y     = GT
+              | x > y     = LT
+              | otherwise = EQ
+  in  cmp (Prelude.length a) (Prelude.length b)
+
