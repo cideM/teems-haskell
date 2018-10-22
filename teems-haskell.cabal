@@ -61,7 +61,6 @@ test-suite teems-haskell-test
     , hspec
     , trifecta
     , parsers
-    , ansi-wl-pprint
     , containers
     , raw-strings-qq
   default-language: Haskell2010

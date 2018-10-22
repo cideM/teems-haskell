@@ -6,7 +6,6 @@ import           Lib
 import           Data.Text                     as T
 import           Data.Map                      as DM
 import           Text.Trifecta
-import           Control.Applicative
 import           Text.Parser.LookAhead
 import           Data.List                      ( foldr
                                                 , sortBy

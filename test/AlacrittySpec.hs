@@ -2,13 +2,8 @@
 
 module AlacrittySpec where
 
-import           Lib
 import           Alacritty
 import           Test.Hspec
-import           Data.Map                      as DM
-import           Text.Parser.Combinators
-import           Text.Trifecta
-import           Text.PrettyPrint.ANSI.Leijen
 import           TestUtils
 
 spec :: Spec
@@ -25,25 +20,23 @@ spec = do
       $          prs colorLineP "   black: '0x000000' # foo"
       `shouldBe` Just
                    (Line
-                     (AlacrittyLine
+                     AlacrittyLine
                        { _leading  = "   "
                        , _color    = "black"
                        , _middle   = ": "
                        , _trailing = " # foo"
                        }
-                     )
                    )
     it "should parse lines without leading spaces"
       $          prs colorLineP "black: '0x000000'"
       `shouldBe` Just
                    (Line
-                     (AlacrittyLine
+                     AlacrittyLine
                        { _leading  = ""
                        , _color    = "black"
                        , _middle   = ": "
                        , _trailing = ""
                        }
-                     )
                    )
     it "should skip commented lines"
       $          prs colorLineP "#   black: '0x000000' # foo"
