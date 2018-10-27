@@ -11,7 +11,7 @@ prs p s =
   let r = parseString p mempty s
   in  case r of
         (Success a      ) -> Just a
-        (Failure errInfo) -> Nothing
+        (Failure _) -> Nothing
 
 testTheme :: Theme
 testTheme = Theme "foo" $ DM.fromList

@@ -60,7 +60,7 @@ alacrittyColorNames =
 colorLineP :: Parser Alacritty
 colorLineP = do
   leading <- T.pack <$> many space
-  color   <- T.pack <$> (choice $ string <$> alacrittyColorNames)
+  color   <- T.pack <$> choice (string <$> alacrittyColorNames)
   middle  <- T.pack
     <$> manyTill (choice [letter, char ':', space]) (try (string "'0x"))
   -- Skip the actual color we want to replace, as it's discarded anyway
