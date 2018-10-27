@@ -18,6 +18,7 @@ library
       Alacritty
     , X
     , Lib
+    , XTerm
   hs-source-dirs:
       src
   build-depends:

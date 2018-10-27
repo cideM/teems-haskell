@@ -22,7 +22,7 @@ data XLine = XLine {
 x :: App
 x = App
   { appName       = "x"
-  , configCreator = configCreator' []
+  , configCreator = configCreator' ["*."]
   , configPaths   = fmap getConfigPath [".Xresources"]
   }
 
@@ -42,7 +42,7 @@ hexP = do
   return $ "#" `T.append` color
 
 colorValueP :: Parser T.Text
-colorValueP = choice [hexP, (T.pack <$> manyTill anyChar eof)]
+colorValueP = choice [hexP, T.pack <$> manyTill anyChar eof]
 
 -- Xresources syntax boils down to key: value.
 -- key is a "name.class.resource" and value can probably be almost anything
@@ -63,20 +63,20 @@ xLineP allowed = do
   leading <- T.pack <$> many space
   nc      <- nameClassP allowed
   color   <- resourceP
-  middle  <- T.pack <$> (some $ choice [space, char ':'])
+  middle  <- T.pack <$> some (choice [space, char ':'])
   _       <- colorValueP
   return
     $ XLine (leading `T.append` nc `T.append` color `T.append` middle) color
 
 makeNewLine :: ColorValue -> XLine -> T.Text
-makeNewLine c (XLine { _leading = l }) = l `T.append` c
+makeNewLine c XLine { _leading = l } = l `T.append` c
 
 configCreator' :: [NameClassPrefix] -> Theme -> T.Text -> T.Text
-configCreator' allowed theme oldConfig =
+configCreator' allowedPrefixes theme oldConfig =
   T.unlines . Data.List.foldr run [] $ T.lines oldConfig
  where
   getNewValue key = DM.lookup key (colors theme)
-  run l ls = case parseText (xLineP allowed) l of
+  run l ls = case parseText (xLineP allowedPrefixes) l of
     (Success parsedLine@XLine { _color = c }) -> l' : ls
      where
       l' = case getNewValue c of

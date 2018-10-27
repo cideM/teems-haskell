@@ -8,13 +8,13 @@ import           Test.Hspec
 
 spec :: Spec
 spec = do
-  describe "resourceP" $ do
-    it "should parse a color name" $ prs resourceP "color1" `shouldBe` Just
-      "color1"
-  describe "colorValueP" $ do
-    it "should parse hex values" $ do
-      prs colorValueP "#ffffff" `shouldBe` Just "#ffffff"
-      prs colorValueP "#fff" `shouldBe` Just "#fff"
+  describe "resourceP"
+    $          it "should parse a color name"
+    $          prs resourceP "color1"
+    `shouldBe` Just "color1"
+  describe "colorValueP" $ it "should parse hex values" $ do
+    prs colorValueP "#ffffff" `shouldBe` Just "#ffffff"
+    prs colorValueP "#fff" `shouldBe` Just "#fff"
   describe "nameClassP" $ do
     it "should parse *" $ prs (nameClassP ["*"]) "*color4" `shouldBe` Just "*"
     it "should parse *."
@@ -27,9 +27,12 @@ spec = do
       $ prs (nameClassP ["*", "*.", "xterm.VTE100."]) "xterm.VTE100.color4"
       `shouldBe` Just "xterm.VTE100."
   describe "xLineP" $ do
-    it "should parse line without app name"
+    it "should parse line with wildcard"
       $          prs (xLineP ["*"]) "*color1: #000000"
       `shouldBe` Just XLine {_leading = "*color1: ", _color = "color1"}
+    it "should not parse line that does not match exactly"
+      $          prs (xLineP ["*"]) "XTerm*color1: #000000"
+      `shouldBe` Nothing
     it "should parse line with app name"
       $          prs (xLineP ["xterm."]) "xterm.color1: #000000"
       `shouldBe` Just XLine {_leading = "xterm.color1: ", _color = "color1"}
@@ -39,10 +42,10 @@ spec = do
     it "should maintain whitespace"
       $          prs (xLineP ["*"]) "*color1   :   #000000"
       `shouldBe` Just XLine {_leading = "*color1   :   ", _color = "color1"}
-  describe "makeNewLine" $ do
-    it "should construct line" $ do
-      makeNewLine "#ffffff" (XLine "xterm*color1: " "color1")
-        `shouldBe` "xterm*color1: #ffffff"
+  describe "makeNewLine"
+    $          it "should construct line"
+    $          makeNewLine "#ffffff" (XLine "xterm*color1: " "color1")
+    `shouldBe` "xterm*color1: #ffffff"
   describe "configCreator'"
     $ it "should replace colors with those from the theme"
     $ do
