@@ -12,7 +12,6 @@ import           Data.List                      ( foldr
                                                 )
 
 type NameClassPrefix = T.Text
-type XColorName = T.Text
 
 data XLine = XLine {
   _leading :: T.Text,
@@ -26,7 +25,7 @@ x = App
   , configPaths   = fmap getConfigPath [".Xresources"]
   }
 
-resourceP :: Parser XColorName
+resourceP :: Parser ColorName
 resourceP = T.pack
   <$> choice [string "foreground", string "background", colorWithDigitP]
  where
@@ -34,15 +33,6 @@ resourceP = T.pack
     _   <- string "color"
     num <- some digit
     return $ "color" ++ num
-
-hexP :: Parser T.Text
-hexP = do
-  _     <- char '#'
-  color <- T.pack <$> some alphaNum
-  return $ "#" `T.append` color
-
-colorValueP :: Parser T.Text
-colorValueP = choice [hexP, T.pack <$> manyTill anyChar eof]
 
 -- Xresources syntax boils down to key: value.
 -- key is a "name.class.resource" and value can probably be almost anything
@@ -64,12 +54,12 @@ xLineP allowed = do
   nc      <- nameClassP allowed
   color   <- resourceP
   middle  <- T.pack <$> some (choice [space, char ':'])
-  _       <- colorValueP
+  _       <- manyTill anyChar eof
   return
     $ XLine (leading `T.append` nc `T.append` color `T.append` middle) color
 
 makeNewLine :: ColorValue -> XLine -> T.Text
-makeNewLine c XLine { _leading = l } = l `T.append` c
+makeNewLine ColorValue { hex = HexColor color } XLine { _leading = l } = l `T.append` "#" `T.append` color
 
 configCreator' :: [NameClassPrefix] -> Theme -> T.Text -> T.Text
 configCreator' allowedPrefixes theme oldConfig =

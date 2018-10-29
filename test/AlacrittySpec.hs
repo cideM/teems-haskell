@@ -44,17 +44,17 @@ spec = do
   describe "valueFromTheme" $ do
     it "should return normal colors"
       $          valueFromTheme testTheme Normal "black"
-      `shouldBe` Just "#000000"
+      `shouldBe` Just black
     it "should return bright colors"
       $          valueFromTheme testTheme Bright "black"
-      `shouldBe` Just "#888888"
+      `shouldBe` Just brightBlack
   describe "makeNewline" $ do
     it "should return newline with color replaced"
-      $          makeNewline "#000000" (AlacrittyLine "" "black" ": " "")
+      $          makeNewline black (AlacrittyLine "" "black" ": " "")
       `shouldBe` "black: '0x000000'"
     it
         "should return newline with color replaced and preserve leading and trailing content"
-      $ makeNewline "#000000" (AlacrittyLine "   " "black" ": " " #foo")
+      $ makeNewline black (AlacrittyLine "   " "black" ": " " #foo")
       `shouldBe` "   black: '0x000000' #foo"
   describe "configCreator'"
     $ it "should return a new config based on the theme"

@@ -12,9 +12,6 @@ spec = do
     $          it "should parse a color name"
     $          prs resourceP "color1"
     `shouldBe` Just "color1"
-  describe "colorValueP" $ it "should parse hex values" $ do
-    prs colorValueP "#ffffff" `shouldBe` Just "#ffffff"
-    prs colorValueP "#fff" `shouldBe` Just "#fff"
   describe "nameClassP" $ do
     it "should parse *" $ prs (nameClassP ["*"]) "*color4" `shouldBe` Just "*"
     it "should parse *."
@@ -44,8 +41,8 @@ spec = do
       `shouldBe` Just XLine {_leading = "*color1   :   ", _color = "color1"}
   describe "makeNewLine"
     $          it "should construct line"
-    $          makeNewLine "#ffffff" (XLine "xterm*color1: " "color1")
-    `shouldBe` "xterm*color1: #ffffff"
+    $          makeNewLine black (XLine "xterm*color1: " "color1")
+    `shouldBe` "xterm*color1: #000000"
   describe "configCreator'"
     $ it "should replace colors with those from the theme"
     $ do

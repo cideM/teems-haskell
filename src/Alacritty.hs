@@ -9,23 +9,16 @@ import           Text.Trifecta           hiding ( line )
 import           Control.Applicative
 import           Data.List                     as DL
 
-type AlacrittyColorName = T.Text
 type Config = T.Text
 
 data AlacrittyMode = Normal | Bright deriving (Show, Eq)
 data AlacrittyLine = AlacrittyLine {
   _leading  :: T.Text,
-  _color    :: AlacrittyColorName,
+  _color    :: ColorName,
   _middle   :: T.Text,
   _trailing :: T.Text
 } deriving (Show, Eq)
 data Alacritty =  Line AlacrittyLine | Mode AlacrittyMode deriving (Show, Eq)
-
--- instance Eq Alacritty where
---   (==) (color _) (Mode' _) = False
---   (==) (Mode' a) (Mode' b) = a == b
---   (==) (color a) (color b) = a == b
---   (==) (Mode' _) (color _) = False
 
 alacritty :: App
 alacritty = App
@@ -69,7 +62,7 @@ colorLineP = do
   trailing <- T.pack <$> manyTill anyChar eof
   return . Line $ AlacrittyLine leading color middle trailing
 
-normal :: DM.Map AlacrittyColorName ColorName
+normal :: DM.Map ColorName ColorName
 normal = DM.fromList
   [ ("background", "background")
   , ("foreground", "foreground")
@@ -83,7 +76,7 @@ normal = DM.fromList
   , ("white"     , "color7")
   ]
 
-bright :: DM.Map AlacrittyColorName ColorName
+bright :: DM.Map ColorName ColorName
 bright = DM.fromList
   [ ("background", "background")
   , ("foreground", "foreground")
@@ -98,7 +91,7 @@ bright = DM.fromList
   ]
 
 valueFromTheme
-  :: Theme -> AlacrittyMode -> AlacrittyColorName -> Maybe ColorValue
+  :: Theme -> AlacrittyMode -> ColorName -> Maybe ColorValue
 valueFromTheme theme mode color =
   let map' = case mode of
         Bright -> bright
@@ -108,13 +101,13 @@ valueFromTheme theme mode color =
         value <- DM.lookup color map'
         DM.lookup value colors'
 
-makeNewline :: ColorName -> AlacrittyLine -> T.Text
-makeNewline value (AlacrittyLine leading color middle trailing) =
+makeNewline :: ColorValue -> AlacrittyLine -> T.Text
+makeNewline ColorValue { hex = HexColor value } (AlacrittyLine leading color middle trailing) =
   leading
     `T.append` color
     `T.append` middle
     `T.append` "'0x"
-    `T.append` T.tail value
+    `T.append` value
     `T.append` "'"
     `T.append` trailing
 
