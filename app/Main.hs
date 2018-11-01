@@ -30,7 +30,7 @@ type ConfigPath = String
 type ParseErr = T.Text
 
 apps :: [App]
-apps = [alacritty, x, xterm, kitty, termite]
+apps = [alacritty, x, xTerm, kitty, termite]
 
 getThemes :: (MonadThrow m, MonadIO m) => FilePath -> m [Theme]
 getThemes p = do
@@ -42,14 +42,14 @@ getThemes p = do
 listThemes :: (MonadThrow m, MonadIO m) => FilePath -> m ()
 listThemes fp = do
   themes <- getThemes fp
-  liftIO $ traverse_ (TIO.putStrLn . name) themes
+  liftIO $ traverse_ (TIO.putStrLn . _name) themes
 
 activateTheme :: (MonadIO m, MonadThrow m) => Theme -> m ()
 activateTheme theme = liftIO $ traverse_ transform apps
  where
   transform app = do
-    let transformFn = Lib.configCreator app
-    configs <- liftIO . sequence $ configPaths app
+    let transformFn = _configCreator app
+    configs <- liftIO . traverse getConfigPath $ _configPaths app
     traverse_ (createNewConfig transformFn) configs
   createNewConfig transformFn path = do
     config <- TIO.readFile path
@@ -59,7 +59,7 @@ activateTheme theme = liftIO $ traverse_ transform apps
 
 findTheme :: (MonadThrow m) => ThemeName -> [Theme] -> m Theme
 findTheme tn ts = do
-  let result = DL.find ((==) tn . name) ts
+  let result = DL.find ((==) tn . _name) ts
   case result of
     Nothing  -> throw ThemeNotFoundException
     (Just a) -> return a

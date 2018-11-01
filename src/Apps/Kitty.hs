@@ -10,23 +10,24 @@ import           Apps.ConfigCreator
 import           Colors
 
 kitty :: App
-kitty = App "kitty"
-            (configCreator' lineP makeNewLine)
-            (fmap getConfigPath ["kitty/kitty.config"])
+kitty = App "kitty" (configCreator' lineP makeNewLine) ["kitty/kitty.config"]
 
 -- Excluding colorN (color0, color100,...)
-kittyColorNames :: [String]
-kittyColorNames =
-  ["foreground", "selection_foreground", "selection_background", "background"]
+kittyColorP :: Parser T.Text
+kittyColorP = T.pack <$> choice
+  (fmap
+    string
+    ["foreground", "selection_foreground", "selection_background", "background"]
+  )
 
-lineP :: Parser String
-lineP = T.unpack <$> colorNameP kittyColorNames
+lineP :: Parser T.Text
+lineP = spaces *> choice [colorNP, kittyColorP] <* spaces
 
-lineWithoutColorP :: Parser String
-lineWithoutColorP = manyTill anyChar (char '#')
+lineWithoutColorP :: Parser T.Text
+lineWithoutColorP = T.pack <$> manyTill anyChar (char '#')
 
-makeNewLine :: RGBA -> OldLine -> Either T.Text NewLine
-makeNewLine color l = case parseText lineWithoutColorP l of
-  (Success leading) -> Right $ T.pack leading `T.append` hexAsText
+makeNewLine :: OldLine -> RGBA -> Either T.Text NewLine
+makeNewLine l color = case parseText lineWithoutColorP l of
+  (Success leading) -> Right $ leading `T.append` hexAsText
     where hexAsText = displayHexColor $ rgbaToHexColor color
   (Failure _) -> Left "Failed to parse leading part of old line"

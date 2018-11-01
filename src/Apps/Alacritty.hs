@@ -7,24 +7,20 @@ import           Util
 import           Data.Text                     as T
 import           Data.Map.Strict               as DM
 import           Text.Trifecta
+import           Apps.ConfigCreator             ( missingColor
+                                                , OldLine
+                                                , NewLine
+                                                )
 import           Control.Applicative
 import           Data.List                     as DL
 import           Data.Vector                   as Vec
 import           Colors
 
 data AlacrittyMode = Normal | Bright deriving (Show, Eq)
-data AlacrittyLine = AlacrittyLine {
-  _leading  :: T.Text,
-  _color    :: ColorName,
-  _middle   :: T.Text,
-  _trailing :: T.Text
-} deriving (Show, Eq)
-data Alacritty =  Line AlacrittyLine | Mode AlacrittyMode deriving (Show, Eq)
+data Alacritty = ColorName T.Text | Mode AlacrittyMode deriving (Show, Eq)
 
 alacritty :: App
-alacritty = App "alacritty"
-                configCreator'
-                (fmap getConfigPath ["alacritty/alacritty.yml"])
+alacritty = App "alacritty" configCreator' ["alacritty/alacritty.yml"]
 
 modeP :: Parser Alacritty
 modeP = try $ do
@@ -49,19 +45,8 @@ alacrittyColorNames =
   , "foreground"
   ]
 
-colorLineP :: Parser Alacritty
-colorLineP = do
-  leading <- T.pack <$> many space
-  color   <- T.pack <$> choice (string <$> alacrittyColorNames)
-  middle  <- T.pack
-    <$> manyTill (choice [letter, char ':', space]) (try (string "'0x"))
-  -- Skip the actual color we want to replace, as it's discarded anyway
-  _        <- Text.Trifecta.count 6 alphaNum
-  _        <- char '\''
-  trailing <- T.pack <$> manyTill anyChar eof
-  return . Line $ AlacrittyLine leading color middle trailing
 
-normal :: DM.Map ColorName ColorName
+normal :: DM.Map T.Text T.Text
 normal = DM.fromList
   [ ("background", "background")
   , ("foreground", "foreground")
@@ -75,7 +60,7 @@ normal = DM.fromList
   , ("white"     , "color7")
   ]
 
-bright :: DM.Map ColorName ColorName
+bright :: DM.Map T.Text T.Text
 bright = DM.fromList
   [ ("background", "background")
   , ("foreground", "foreground")
@@ -89,7 +74,21 @@ bright = DM.fromList
   , ("white"     , "color15")
   ]
 
-getColorValue :: Theme -> AlacrittyMode -> ColorName -> Maybe RGBA
+colorP :: Parser Alacritty
+colorP =
+  ColorName
+    .   T.pack
+    <$> (spaces *> choice (string <$> alacrittyColorNames) <* char ':')
+
+lineWithoutColorValueP :: Parser T.Text
+lineWithoutColorValueP = do
+  spaces'   <- T.pack <$> many space
+  colorName <- T.pack <$> choice (string <$> alacrittyColorNames)
+  padding   <- T.pack
+    <$> manyTill (choice [letter, char ':', space]) (try (string "'0x"))
+  return $ spaces' `T.append` colorName `T.append` padding
+
+getColorValue :: Theme -> AlacrittyMode -> T.Text -> Maybe RGBA
 getColorValue theme mode color =
   let map' = case mode of
         Bright -> bright
@@ -99,39 +98,34 @@ getColorValue theme mode color =
         value <- DM.lookup color map'
         DM.lookup value colors'
 
-makeNewline :: RGBA -> AlacrittyLine -> T.Text
-makeNewline color (AlacrittyLine leading colorName middle trailing) =
-  leading
-    `T.append` colorName
-    `T.append` middle
-    `T.append` "'0x"
-    `T.append` transform color
-    `T.append` "'"
-    `T.append` trailing
- where
-  transform c =
-    let (HexColor (r, g, b)) = rgbaToHexColor c in r `T.append` g `T.append` b
+makeNewline :: OldLine -> RGBA -> Either T.Text NewLine
+makeNewline oldLine color = case parseText lineWithoutColorValueP oldLine of
+  (Success leading) -> Right $ leading `T.append` newValue
+   where
+    newValue = "'0x" `T.append` transform color `T.append` "'"
+    transform c =
+      let (HexColor (r, g, b)) = rgbaToHexColor c
+      in  r `T.append` g `T.append` b
+  (Failure _) -> Left "Failed to parse leading part of old oldLine"
+
+unlines' :: Vec.Vector T.Text -> T.Text
+unlines' = Vec.foldl T.append T.empty . fmap (`T.append` "\n")
 
 configCreator' :: Theme -> Config -> Either T.Text Config
-configCreator' theme config = fmap unlinesVec . Vec.sequence . snd $ DL.foldl
+configCreator' theme config = fmap unlines' . Vec.sequence . snd $ DL.foldl
   run
   (Normal, Vec.empty)
   (T.lines config)
  where
-  lineP = choice [modeP, colorLineP]
-  run (m, ls) l =
+  lineP = choice [modeP, colorP]
+  run (m, ls) currentLine =
     let getColorValue' = getColorValue theme m
-    in  case parseText lineP l of
-          (Success (Line matchedLine@AlacrittyLine { _color = colorName })) ->
-            (m, ls `Vec.snoc` l')
+    in  case parseText lineP currentLine of
+          (Success (ColorName n)) ->
+            (m, ls `Vec.snoc` maybe noColorMsg newLine newColorValue)
            where
-            l' = case getColorValue' colorName of
-              (Just cval) -> Right $ makeNewline cval matchedLine
-              Nothing ->
-                Left
-                  $          "Could not find color "
-                  `T.append` colorName
-                  `T.append` " in theme "
-                  `T.append` _name theme
-          (Success (Mode m')) -> (m', ls `Vec.snoc` Right l)
-          (Failure _        ) -> (m, ls `Vec.snoc` Right l)
+            newColorValue = getColorValue' n
+            noColorMsg    = Left $ missingColor n (_name theme)
+            newLine       = makeNewline currentLine
+          (Success (Mode m')) -> (m', ls `Vec.snoc` Right currentLine)
+          (Failure _        ) -> (m, ls `Vec.snoc` Right currentLine)

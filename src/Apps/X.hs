@@ -17,14 +17,14 @@ x :: App
 x = App
   "x"
   (configCreator' (xLineP allowedPrefixes) (makeNewLine allowedPrefixes))
-  (fmap getConfigPath [".Xresources"])
+  [".Xresources"]
 
 allowedPrefixes :: [T.Text]
 allowedPrefixes = ["*."]
 
 resourceP :: Parser ColorName
-resourceP =
-  T.pack <$> choice [string "foreground", string "background", colorNP]
+resourceP = choice
+  [T.pack <$> string "foreground", T.pack <$> string "background", colorNP]
 
 -- Xresources syntax boils down to key: value.
 -- key is a "name.class.resource" and value can probably be almost anything
@@ -40,20 +40,20 @@ nameClassP prefixes = T.pack <$> choice prefixChoices <* lookAhead resourceP
   prefixes'     = sortBy lengthDesc $ fmap T.unpack prefixes
   prefixChoices = string <$> prefixes'
 
-xLineP :: [NameClassPrefix] -> Parser String
-xLineP allowed = T.unpack <$> (spaces *> nameClassP allowed *> resourceP)
+xLineP :: [NameClassPrefix] -> Parser T.Text
+xLineP allowed = spaces *> nameClassP allowed *> resourceP
 
-lineWithoutColorP :: [NameClassPrefix] -> Parser String
+lineWithoutColorP :: [NameClassPrefix] -> Parser T.Text
 lineWithoutColorP allowed = do
   leading <- T.pack <$> many space
   nc      <- nameClassP allowed
   color   <- resourceP
   middle  <- T.pack <$> some (choice [space, char ':'])
   _       <- manyTill anyChar eof
-  return . T.unpack $ leading `T.append` nc `T.append` color `T.append` middle
+  return $ leading `T.append` nc `T.append` color `T.append` middle
 
-makeNewLine :: [NameClassPrefix] -> RGBA -> OldLine -> Either T.Text NewLine
-makeNewLine allowed color l = case parseText (lineWithoutColorP allowed) l of
-  (Success leading) -> Right $ T.pack leading `T.append` hexAsText
+makeNewLine :: [NameClassPrefix] -> OldLine -> RGBA -> Either T.Text NewLine
+makeNewLine allowed l color = case parseText (lineWithoutColorP allowed) l of
+  (Success leading) -> Right $ leading `T.append` hexAsText
     where hexAsText = displayHexColor $ rgbaToHexColor color
   (Failure _) -> Left "Failed to parse leading part of old line"

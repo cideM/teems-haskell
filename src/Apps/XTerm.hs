@@ -14,7 +14,7 @@ xTerm = App
   (configCreator' (XResources.xLineP allowedPrefixes)
                   (XResources.makeNewLine allowedPrefixes)
   )
-  (fmap getConfigPath [".Xresources"])
+  [".Xresources"]
 
 allowedPrefixes :: [T.Text]
 allowedPrefixes = ["XTerm*"]

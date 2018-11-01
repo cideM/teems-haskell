@@ -15,31 +15,15 @@ spec = do
     it "should parse normal"
       $          prs modeP "normal: # this is just foo"
       `shouldBe` Just (Mode Normal)
-  describe "colorLineP" $ do
+  describe "colorP" $ do
     it "should parse lines with leading spaces"
-      $          prs colorLineP "   black: '0x000000' # foo"
-      `shouldBe` Just
-                   (Line
-                     AlacrittyLine
-                       { _leading  = "   "
-                       , _color    = "black"
-                       , _middle   = ": "
-                       , _trailing = " # foo"
-                       }
-                   )
+      $          prs colorP "black: '0x000000'"
+      `shouldBe` Just (ColorName "black")
     it "should parse lines without leading spaces"
-      $          prs colorLineP "black: '0x000000'"
-      `shouldBe` Just
-                   (Line
-                     AlacrittyLine
-                       { _leading  = ""
-                       , _color    = "black"
-                       , _middle   = ": "
-                       , _trailing = ""
-                       }
-                   )
+      $          prs colorP "black: '0x000000'"
+      `shouldBe` Just (ColorName "black")
     it "should skip commented lines"
-      $          prs colorLineP "#   black: '0x000000' # foo"
+      $          prs colorP "#   black: '0x000000'"
       `shouldBe` Nothing
   describe "getColorValue" $ do
     it "should return normal colors"
@@ -48,14 +32,6 @@ spec = do
     it "should return bright colors"
       $          getColorValue testTheme Bright "black"
       `shouldBe` Just brightBlack
-  describe "makeNewline" $ do
-    it "should return newline with color replaced"
-      $          makeNewline black (AlacrittyLine "" "black" ": " "")
-      `shouldBe` "black: '0x000000'"
-    it
-        "should return newline with color replaced and preserve leading and trailing content"
-      $ makeNewline black (AlacrittyLine "   " "black" ": " " #foo")
-      `shouldBe` "   black: '0x000000' #foo"
   describe "configCreator'"
     $ it "should return a new config based on the theme"
     $ do

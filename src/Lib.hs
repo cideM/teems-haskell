@@ -12,7 +12,7 @@ import           Data.Map.Strict               as Map
 data App = App
     { _appName :: T.Text
     , _configCreator :: Theme -> T.Text -> Either T.Text T.Text
-    , _configPaths :: [IO FilePath]
+    , _configPaths :: [FilePath]
     }
 
 instance Show App where

@@ -16,7 +16,7 @@ spec = describe "Kitty.configCreator" $ do
     let
       expected
         = "foreground = #ffffff\n background = #323232\n color0 = #000000\n color8 = #080808\n color1 = #010101\n color9 = #090909\n color2 = #020202\n color10 = #0a0a0a\n color3 = #030303\n color11 = #0b0b0b\n color4 = #040404\n color12 = #0c0c0c\n color5 = #050505\n color13 = #0d0d0d\n color6 = #060606\n color14 = #0e0e0e\n color7 = #070707\n color15 = #0f0f0f\n"
-    Lib.configCreator kitty testTheme config `shouldBe` Right expected
+    _configCreator kitty testTheme config `shouldBe` Right expected
   it "should replace return Left when color could not be found in theme" $ do
     let config = "selection_foreground = #c5c8c6\n"
-    Lib.configCreator kitty testTheme config `shouldBe` Left "Could not find color selection_foreground in theme foo"
+    _configCreator kitty testTheme config `shouldBe` Left "Could not find color selection_foreground in theme foo"

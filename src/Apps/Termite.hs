@@ -10,25 +10,26 @@ import           Apps.ConfigCreator
 import           Colors
 
 termite :: App
-termite = App "termite"
-              (configCreator' lineP makeNewLine)
-              (fmap getConfigPath ["termite/config"])
+termite = App "termite" (configCreator' lineP makeNewLine) ["termite/config"]
 
 -- Excluding colorN (color0, color100,...)
-termiteColorNames :: [String]
-termiteColorNames =
-  ["foreground", "foreground_bold", "foreground_dim", "background", "cursor"]
+termiteColorP :: Parser T.Text
+termiteColorP = T.pack <$> choice
+  (fmap
+    string
+    ["foreground", "foreground_bold", "foreground_dim", "background", "cursor"]
+  )
 
 
-lineP :: Parser String
-lineP = T.unpack <$> colorNameP termiteColorNames
+lineP :: Parser T.Text
+lineP = spaces *> choice [colorNP, termiteColorP] <* spaces
 
-lineWithoutColorP :: Parser String
-lineWithoutColorP = manyTill anyChar (char '#')
+lineWithoutColorP :: Parser T.Text
+lineWithoutColorP = T.pack <$> manyTill anyChar (char '#')
 
-makeNewLine :: RGBA -> OldLine -> Either T.Text NewLine
-makeNewLine (RGBA (r, g, b, a)) l = case parseText lineWithoutColorP l of
-  (Success leading) -> Right $ T.pack leading `T.append` rgbaText
+makeNewLine :: OldLine -> RGBA -> Either T.Text NewLine
+makeNewLine l (RGBA (r, g, b, a)) = case parseText lineWithoutColorP l of
+  (Success leading) -> Right $ leading `T.append` rgbaText
    where
     rgbaText =
       "rgba("
