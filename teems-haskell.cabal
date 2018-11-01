@@ -22,6 +22,7 @@ library
     , Apps.Termite
     , Colors
     , Util
+    , Apps.ConfigCreator
   hs-source-dirs:
       src
   build-depends:

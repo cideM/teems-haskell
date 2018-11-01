@@ -4,38 +4,29 @@ module Apps.X where
 
 import           Lib
 import           Data.Text                     as T
-import           Data.Map                      as DM
 import           Text.Trifecta
 import           Util
 import           Colors
-import           Data.Vector                   as Vec
+import           Apps.ConfigCreator
 import           Text.Parser.LookAhead
-import           Data.List                      ( foldr
-                                                , sortBy
-                                                )
+import           Data.List                      ( sortBy )
 
 type NameClassPrefix = T.Text
-
-data XLine = XLine {
-  _leading :: T.Text,
-  _color :: T.Text
-} deriving (Show, Eq)
 
 x :: App
 x = App
   { appName       = "x"
-  , configCreator = configCreator' ["*."]
+  , configCreator = configCreator' (xLineP allowedPrefixes)
+                                   (makeNewLine allowedPrefixes)
   , configPaths   = fmap getConfigPath [".Xresources"]
   }
 
+allowedPrefixes :: [T.Text]
+allowedPrefixes = ["*."]
+
 resourceP :: Parser ColorName
-resourceP = T.pack
-  <$> choice [string "foreground", string "background", colorWithDigitP]
- where
-  colorWithDigitP = do
-    _   <- string "color"
-    num <- some digit
-    return $ "color" Prelude.++ num
+resourceP =
+  T.pack <$> choice [string "foreground", string "background", colorNP]
 
 -- Xresources syntax boils down to key: value.
 -- key is a "name.class.resource" and value can probably be almost anything
@@ -51,36 +42,20 @@ nameClassP prefixes = T.pack <$> choice prefixChoices <* lookAhead resourceP
   prefixes'     = sortBy lengthDesc $ fmap T.unpack prefixes
   prefixChoices = string <$> prefixes'
 
-xLineP :: [NameClassPrefix] -> Parser XLine
-xLineP allowed = do
+xLineP :: [NameClassPrefix] -> Parser String
+xLineP allowed = T.unpack <$> (spaces *> nameClassP allowed *> resourceP)
+
+lineWithoutColorP :: [NameClassPrefix] -> Parser String
+lineWithoutColorP allowed = do
   leading <- T.pack <$> many space
   nc      <- nameClassP allowed
   color   <- resourceP
   middle  <- T.pack <$> some (choice [space, char ':'])
   _       <- manyTill anyChar eof
-  return
-    $ XLine (leading `T.append` nc `T.append` color `T.append` middle) color
+  return . T.unpack $ leading `T.append` nc `T.append` color `T.append` middle
 
-makeNewLine :: RGBA -> XLine -> T.Text
-makeNewLine color XLine { _leading = l } = l `T.append` hexAsText
-  where hexAsText = displayHexColor $ rgbaToHexColor color
-
-
-configCreator' :: [NameClassPrefix] -> Theme -> Config -> Either T.Text Config
-configCreator' allowedPrefixes theme oldConfig =
-  fmap unlinesVec . Vec.sequence . Data.List.foldr run Vec.empty $ T.lines
-    oldConfig
- where
-  getColorValue key = DM.lookup key (colors theme)
-  run l ls = case parseText (xLineP allowedPrefixes) l of
-    (Success parsedLine@XLine { _color = colorName }) -> l' `Vec.cons` ls
-     where
-      l' = case getColorValue colorName of
-        (Just val) -> Right $ makeNewLine val parsedLine
-        Nothing ->
-          Left
-            $          "Could not find color "
-            `T.append` colorName
-            `T.append` " in theme "
-            `T.append` name theme
-    (Failure _) -> Right l `Vec.cons` ls
+makeNewLine :: [NameClassPrefix] -> RGBA -> OldLine -> Either T.Text NewLine
+makeNewLine allowed color l = case parseText (lineWithoutColorP allowed) l of
+  (Success leading) -> Right $ T.pack leading `T.append` hexAsText
+    where hexAsText = displayHexColor $ rgbaToHexColor color
+  (Failure _) -> Left "Failed to parse leading part of old line"

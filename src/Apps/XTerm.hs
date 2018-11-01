@@ -2,12 +2,19 @@
 
 module Apps.XTerm where
 
-import Lib
-import Apps.X as XResources
+import           Apps.ConfigCreator
+import           Lib
+import           Data.Text                     as T
+import           Apps.X                        as XResources
+                                         hiding ( allowedPrefixes )
 
 xTerm :: App
 xTerm = App
   { appName       = "xterm"
-  , configCreator = XResources.configCreator' ["XTerm*"]
+  , configCreator = configCreator' (XResources.xLineP allowedPrefixes)
+                                   (XResources.makeNewLine allowedPrefixes)
   , configPaths   = fmap getConfigPath [".Xresources"]
   }
+
+allowedPrefixes :: [T.Text]
+allowedPrefixes = ["XTerm*"]

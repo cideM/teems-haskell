@@ -4,6 +4,7 @@ module XSpec where
 
 import           TestUtils
 import           Apps.X
+import           Lib
 import           Test.Hspec
 
 spec :: Spec
@@ -26,24 +27,20 @@ spec = do
   describe "xLineP" $ do
     it "should parse line with wildcard"
       $          prs (xLineP ["*"]) "*color1: #000000"
-      `shouldBe` Just XLine {_leading = "*color1: ", _color = "color1"}
+      `shouldBe` Just "color1"
     it "should not parse line that does not match exactly"
       $          prs (xLineP ["*"]) "XTerm*color1: #000000"
       `shouldBe` Nothing
     it "should parse line with app name"
       $          prs (xLineP ["xterm."]) "xterm.color1: #000000"
-      `shouldBe` Just XLine {_leading = "xterm.color1: ", _color = "color1"}
+      `shouldBe` Just "color1"
     it "should not parse line with wrong app name"
       $          prs (xLineP ["foo"]) "xterm*color1: #000000"
       `shouldBe` Nothing
     it "should maintain whitespace"
       $          prs (xLineP ["*"]) "*color1   :   #000000"
-      `shouldBe` Just XLine {_leading = "*color1   :   ", _color = "color1"}
-  describe "makeNewLine"
-    $          it "should construct line"
-    $          makeNewLine black (XLine "xterm*color1: " "color1")
-    `shouldBe` "xterm*color1: #000000"
-  describe "configCreator'"
+      `shouldBe` Just "color1"
+  describe "X.configCreator"
     $ it "should replace colors with those from the theme"
     $ do
         let
@@ -52,4 +49,4 @@ spec = do
         let
           expected
             = "*.foreground: #ffffff\n *.background: #323232\n *.color0: #000000\n *.color8: #080808\n *.color1: #010101\n *.color9: #090909\n *.color2: #020202\n *.color10: #0a0a0a\n *.color3: #030303\n *.color11: #0b0b0b\n *.color4: #040404\n *.color12: #0c0c0c\n *.color5: #050505\n *.color13: #0d0d0d\n *.color6: #060606\n *.color14: #0e0e0e\n *.color7: #070707\n *.color15: #0f0f0f\n"
-        configCreator' ["*."] testTheme config `shouldBe` Right expected
+        Lib.configCreator x testTheme config `shouldBe` Right expected
