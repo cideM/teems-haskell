@@ -17,6 +17,10 @@ type LineParser = Parser String
 type OldLine = T.Text
 type NewLine = T.Text
 
+
+-- This isn't tested as it only makes sense in the context of those functions.
+-- That's probably a very bad practice but whatever. It's tested in
+-- KittySpec.hs, XSpec.hs etc.
 configCreator'
   :: LineParser
   -- ^^^ Checks if a line has a valid color name and returns it for lookup of a new value.

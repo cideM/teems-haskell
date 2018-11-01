@@ -4,7 +4,7 @@ module Util where
 
 import           Text.Trifecta                 as Trifecta
 import           Data.Text                     as T
-import           Data.Vector                     as Vec
+import           Data.Vector                   as Vec
 
 parseText :: Parser a -> T.Text -> Trifecta.Result a
 parseText p = parseString p mempty . T.unpack
@@ -23,4 +23,4 @@ colorNP = do
 -- be passed as an argument. Check Termite.hs or Kitty.hs for a usage example.
 colorNameP :: [String] -> Parser Text
 colorNameP specialNames =
-  fmap T.pack $ spaces *> choice (colorNP : fmap string specialNames)
+  T.pack <$> (spaces *> choice (colorNP : fmap string specialNames) <* spaces)
