@@ -11,7 +11,7 @@ import           Data.Map.Strict               as Map
 
 data App = App
     { appName :: T.Text
-    , configCreator :: Theme -> T.Text -> T.Text
+    , configCreator :: Theme -> T.Text -> Either T.Text T.Text
     , configPaths :: [IO FilePath]
     }
 

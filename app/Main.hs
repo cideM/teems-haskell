@@ -16,7 +16,7 @@ import           Data.Semigroup                 ( (<>) )
 import           Control.Monad.IO.Class
 import           Control.Exception.Safe
 
-data AppException = ThemeDecodeException | ThemeNotFoundException deriving (Show)
+data AppException = ThemeDecodeException | ThemeNotFoundException | TransformException T.Text deriving (Show)
 
 instance Exception AppException
 
@@ -43,7 +43,7 @@ listThemes fp = do
   themes <- getThemes fp
   liftIO $ traverse_ (TIO.putStrLn . name) themes
 
-activateTheme :: (MonadIO m) => Theme -> m ()
+activateTheme :: (MonadIO m, MonadThrow m) => Theme -> m ()
 activateTheme theme = liftIO $ traverse_ transform apps
  where
   transform app = do
@@ -52,7 +52,9 @@ activateTheme theme = liftIO $ traverse_ transform apps
     traverse_ (createNewConfig transformFn) configs
   createNewConfig transformFn path = do
     config <- TIO.readFile path
-    TIO.writeFile path $ transformFn theme config
+    case transformFn theme config of
+      (Left  err    ) -> throw $ TransformException err
+      (Right config') -> TIO.writeFile path config'
 
 findTheme :: (MonadThrow m) => ThemeName -> [Theme] -> m Theme
 findTheme tn ts = do
@@ -67,6 +69,7 @@ handleException e = liftIO $ TIO.putStrLn msg
   msg = case e of
     ThemeNotFoundException -> "Theme not found"
     ThemeDecodeException   -> "Could not decode config file"
+    TransformException err -> "Could transform config: " `T.append` err
 
 parseConfigPath :: Parser ConfigPath
 parseConfigPath =
