@@ -16,13 +16,14 @@ extra-source-files:  README.md
 library
   exposed-modules:
       Apps.Alacritty
-    , Apps.X
-    , Lib
-    , Apps.XTerm
-    , Apps.Termite
-    , Colors
-    , Util
     , Apps.ConfigCreator
+    , Apps.Kitty
+    , Apps.Termite
+    , Apps.X
+    , Apps.XTerm
+    , Colors
+    , Lib
+    , Util
   hs-source-dirs:
       src
   build-depends:
