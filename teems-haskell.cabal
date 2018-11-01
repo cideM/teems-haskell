@@ -19,6 +19,7 @@ library
     , Apps.X
     , Lib
     , Apps.XTerm
+    , Apps.Termite
     , Colors
     , Util
   hs-source-dirs:

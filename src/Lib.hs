@@ -22,6 +22,8 @@ type ColorName = T.Text
 
 type ThemeName = T.Text
 
+type Config = T.Text
+
 data Theme = Theme
     { name :: ThemeName
     , colors :: Map.Map ColorName RGBA
