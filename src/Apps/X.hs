@@ -15,11 +15,9 @@ type NameClassPrefix = T.Text
 
 x :: App
 x = App
-  { appName       = "x"
-  , configCreator = configCreator' (xLineP allowedPrefixes)
-                                   (makeNewLine allowedPrefixes)
-  , configPaths   = fmap getConfigPath [".Xresources"]
-  }
+  "x"
+  (configCreator' (xLineP allowedPrefixes) (makeNewLine allowedPrefixes))
+  (fmap getConfigPath [".Xresources"])
 
 allowedPrefixes :: [T.Text]
 allowedPrefixes = ["*."]

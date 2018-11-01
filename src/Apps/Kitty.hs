@@ -10,11 +10,9 @@ import           Apps.ConfigCreator
 import           Colors
 
 kitty :: App
-kitty = App
-  { appName       = "kitty"
-  , configCreator = configCreator' lineP makeNewLine
-  , configPaths   = fmap getConfigPath ["kitty/kitty.config"]
-  }
+kitty = App "kitty"
+            (configCreator' lineP makeNewLine)
+            (fmap getConfigPath ["kitty/kitty.config"])
 
 -- Excluding colorN (color0, color100,...)
 kittyColorNames :: [String]

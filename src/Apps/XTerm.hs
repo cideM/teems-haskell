@@ -10,11 +10,11 @@ import           Apps.X                        as XResources
 
 xTerm :: App
 xTerm = App
-  { appName       = "xterm"
-  , configCreator = configCreator' (XResources.xLineP allowedPrefixes)
-                                   (XResources.makeNewLine allowedPrefixes)
-  , configPaths   = fmap getConfigPath [".Xresources"]
-  }
+  "xterm"
+  (configCreator' (XResources.xLineP allowedPrefixes)
+                  (XResources.makeNewLine allowedPrefixes)
+  )
+  (fmap getConfigPath [".Xresources"])
 
 allowedPrefixes :: [T.Text]
 allowedPrefixes = ["XTerm*"]

@@ -11,25 +11,26 @@ import           Data.Foldable
 import           Data.List                     as DL
 import           Apps.Alacritty
 import           Apps.X
+import           Apps.Termite
+import           Apps.Kitty
+import           Apps.XTerm
 import           Options.Applicative
 import           Data.Semigroup                 ( (<>) )
 import           Control.Monad.IO.Class
 import           Control.Exception.Safe
 
 data AppException = ThemeDecodeException | ThemeNotFoundException | TransformException T.Text deriving (Show)
-
 instance Exception AppException
 
 data Command = ListThemes | ActivateTheme ThemeName
 
-type ConfigPath = String
-
 data CLIOptions = CLIOptions ConfigPath Command
 
+type ConfigPath = String
 type ParseErr = T.Text
 
 apps :: [App]
-apps = [alacritty, x]
+apps = [alacritty, x, xterm, kitty, termite]
 
 getThemes :: (MonadThrow m, MonadIO m) => FilePath -> m [Theme]
 getThemes p = do

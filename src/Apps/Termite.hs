@@ -10,11 +10,9 @@ import           Apps.ConfigCreator
 import           Colors
 
 termite :: App
-termite = App
-  { appName       = "termite"
-  , configCreator = configCreator' lineP makeNewLine
-  , configPaths   = fmap getConfigPath ["termite/config"]
-  }
+termite = App "termite"
+              (configCreator' lineP makeNewLine)
+              (fmap getConfigPath ["termite/config"])
 
 -- Excluding colorN (color0, color100,...)
 termiteColorNames :: [String]

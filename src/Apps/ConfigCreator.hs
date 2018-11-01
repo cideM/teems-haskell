@@ -35,7 +35,7 @@ configCreator' lineP makeNewLine theme oldConfig =
   fmap unlinesVec . Vec.sequence . Data.List.foldr run Vec.empty $ T.lines
     oldConfig
  where
-  getColorValue key = DM.lookup key (colors theme)
+  getColorValue key = DM.lookup key (_colors theme)
   run l ls = case parseText lineP l of
     (Success colorName) -> l' `Vec.cons` ls
      where
@@ -47,5 +47,5 @@ configCreator' lineP makeNewLine theme oldConfig =
             $          "Could not find color "
             `T.append` colorName'
             `T.append` " in theme "
-            `T.append` name theme
+            `T.append` _name theme
     (Failure _) -> Right l `Vec.cons` ls

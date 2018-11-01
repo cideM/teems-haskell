@@ -19,4 +19,4 @@ spec =
           expected
             = "XTerm*foreground: #ffffff\n XTerm*background: #323232\n XTerm*color0: #000000\n XTerm*color8: #080808\n XTerm*color1: #010101\n XTerm*color9: #090909\n XTerm*color2: #020202\n XTerm*color10: #0a0a0a\n XTerm*color3: #030303\n XTerm*color11: #0b0b0b\n XTerm*color4: #040404\n XTerm*color12: #0c0c0c\n XTerm*color5: #050505\n XTerm*color13: #0d0d0d\n XTerm*color6: #060606\n XTerm*color14: #0e0e0e\n XTerm*color7: #070707\n XTerm*color15: #0f0f0f\n"
 
-        configCreator xTerm testTheme config `shouldBe` Right expected
+        _configCreator xTerm testTheme config `shouldBe` Right expected

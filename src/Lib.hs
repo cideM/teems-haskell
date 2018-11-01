@@ -10,13 +10,13 @@ import           Colors
 import           Data.Map.Strict               as Map
 
 data App = App
-    { appName :: T.Text
-    , configCreator :: Theme -> T.Text -> Either T.Text T.Text
-    , configPaths :: [IO FilePath]
+    { _appName :: T.Text
+    , _configCreator :: Theme -> T.Text -> Either T.Text T.Text
+    , _configPaths :: [IO FilePath]
     }
 
 instance Show App where
-    show = show . appName
+    show = show . _appName
 
 type ColorName = T.Text
 
@@ -25,8 +25,8 @@ type ThemeName = T.Text
 type Config = T.Text
 
 data Theme = Theme
-    { name :: ThemeName
-    , colors :: Map.Map ColorName RGBA
+    { _name :: ThemeName
+    , _colors :: Map.Map ColorName RGBA
     } deriving (Generic, Show)
 
 instance FromJSON Theme

@@ -22,11 +22,9 @@ data AlacrittyLine = AlacrittyLine {
 data Alacritty =  Line AlacrittyLine | Mode AlacrittyMode deriving (Show, Eq)
 
 alacritty :: App
-alacritty = App
-  { appName       = "alacritty"
-  , configCreator = configCreator'
-  , configPaths   = fmap getConfigPath ["alacritty/alacritty.yml"]
-  }
+alacritty = App "alacritty"
+                configCreator'
+                (fmap getConfigPath ["alacritty/alacritty.yml"])
 
 modeP :: Parser Alacritty
 modeP = try $ do
@@ -96,7 +94,7 @@ getColorValue theme mode color =
   let map' = case mode of
         Bright -> bright
         Normal -> normal
-      colors' = colors theme
+      colors' = _colors theme
   in  do
         value <- DM.lookup color map'
         DM.lookup value colors'
@@ -134,6 +132,6 @@ configCreator' theme config = fmap unlinesVec . Vec.sequence . snd $ DL.foldl
                   $          "Could not find color "
                   `T.append` colorName
                   `T.append` " in theme "
-                  `T.append` name theme
+                  `T.append` _name theme
           (Success (Mode m')) -> (m', ls `Vec.snoc` Right l)
           (Failure _        ) -> (m, ls `Vec.snoc` Right l)
