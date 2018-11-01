@@ -2,7 +2,7 @@
 
 module AlacrittySpec where
 
-import           Alacritty
+import           Apps.Alacritty
 import           Test.Hspec
 import           TestUtils
 
@@ -64,5 +64,5 @@ spec = do
             = "background:     '0x000000'\n foreground:     '0x000000'\n \n normal:\n black:       '0x000000'\n red:         '0x000000'\n green:       '0x000000'\n yellow:      '0x000000'\n blue:        '0x000000'\n magenta:     '0x000000'\n cyan:        '0x000000'\n white:       '0x000000'\n \n # Bright colors\n bright:\n black:       '0x000000'\n red:         '0x000000'\n green:       '0x000000'\n yellow:      '0x000000'\n blue:        '0x000000'\n magenta:     '0x000000'\n cyan:        '0x000000'\n white:       '0x000000'\n"
         let
           expected
-            = "background:     '0xbbbbbb'\n foreground:     '0xffffff'\n \n normal:\n black:       '0x000000'\n red:         '0x111111'\n green:       '0x222222'\n yellow:      '0x333333'\n blue:        '0x444444'\n magenta:     '0x555555'\n cyan:        '0x666666'\n white:       '0x777777'\n \n # Bright colors\n bright:\n black:       '0x888888'\n red:         '0x999999'\n green:       '0x101010'\n yellow:      '0x111111'\n blue:        '0x121212'\n magenta:     '0x131313'\n cyan:        '0x141414'\n white:       '0x151515'\n"
+            = "background:     '0x323232'\n foreground:     '0xffffff'\n \n normal:\n black:       '0x000000'\n red:         '0x010101'\n green:       '0x020202'\n yellow:      '0x030303'\n blue:        '0x040404'\n magenta:     '0x050505'\n cyan:        '0x060606'\n white:       '0x070707'\n \n # Bright colors\n bright:\n black:       '0x080808'\n red:         '0x090909'\n green:       '0x0a0a0a'\n yellow:      '0x0b0b0b'\n blue:        '0x0c0c0c'\n magenta:     '0x0d0d0d'\n cyan:        '0x0e0e0e'\n white:       '0x0f0f0f'\n"
         configCreator' testTheme config `shouldBe` expected

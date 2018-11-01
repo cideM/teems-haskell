@@ -4,6 +4,7 @@ module TestUtils where
 
 import           Text.Trifecta
 import           Data.Map                      as DM
+import           Colors
 import           Lib
 
 prs :: Parser a -> String -> Maybe a
@@ -13,66 +14,30 @@ prs p s =
         (Success a) -> Just a
         (Failure _) -> Nothing
 
-black :: ColorValue
-black = ColorValue (HexColor "000000") (RGBAColor 0 0 0 0.0)
+black :: RGBA
+black = RGBA (0, 0, 0, 1)
 
-brightBlack :: ColorValue
-brightBlack = ColorValue (HexColor "888888") (RGBAColor 88 88 88 0.8)
+brightBlack :: RGBA
+brightBlack = RGBA (8, 8, 8, 1)
 
 testTheme :: Theme
 testTheme = Theme "foo" $ DM.fromList
-  [ ( "foreground"
-    , ColorValue (HexColor "ffffff") (RGBAColor 256 256 256 1.0)
-    )
-  , ( "background"
-    , ColorValue (HexColor "bbbbbb") (RGBAColor 256 256 256 1.0)
-    )
-  , ( "color0"
-    , black
-    )
-  , ( "color1"
-    , ColorValue (HexColor "111111") (RGBAColor 256 256 256 1.0)
-    )
-  , ( "color2"
-    , ColorValue (HexColor "222222") (RGBAColor 256 256 256 1.0)
-    )
-  , ( "color3"
-    , ColorValue (HexColor "333333") (RGBAColor 256 256 256 1.0)
-    )
-  , ( "color4"
-    , ColorValue (HexColor "444444") (RGBAColor 256 256 256 1.0)
-    )
-  , ( "color5"
-    , ColorValue (HexColor "555555") (RGBAColor 256 256 256 1.0)
-    )
-  , ( "color6"
-    , ColorValue (HexColor "666666") (RGBAColor 256 256 256 1.0)
-    )
-  , ( "color7"
-    , ColorValue (HexColor "777777") (RGBAColor 256 256 256 1.0)
-    )
-  , ( "color8"
-    , brightBlack
-    )
-  , ( "color9"
-    , ColorValue (HexColor "999999") (RGBAColor 256 256 256 1.0)
-    )
-  , ( "color10"
-    , ColorValue (HexColor "101010") (RGBAColor 256 256 256 1.0)
-    )
-  , ( "color11"
-    , ColorValue (HexColor "111111") (RGBAColor 256 256 256 1.0)
-    )
-  , ( "color12"
-    , ColorValue (HexColor "121212") (RGBAColor 256 256 256 1.0)
-    )
-  , ( "color13"
-    , ColorValue (HexColor "131313") (RGBAColor 256 256 256 1.0)
-    )
-  , ( "color14"
-    , ColorValue (HexColor "141414") (RGBAColor 256 256 256 1.0)
-    )
-  , ( "color15"
-    , ColorValue (HexColor "151515") (RGBAColor 256 256 256 1.0)
-    )
+  [ ("foreground", RGBA (255, 255, 255, 1))
+  , ("background", RGBA (50, 50, 50, 1))
+  , ("color0"    , black)
+  , ("color1"    , RGBA (1, 1, 1, 1))
+  , ("color2"    , RGBA (2, 2, 2, 1))
+  , ("color3"    , RGBA (3, 3, 3, 1))
+  , ("color4"    , RGBA (4, 4, 4, 1))
+  , ("color5"    , RGBA (5, 5, 5, 1))
+  , ("color6"    , RGBA (6, 6, 6, 1))
+  , ("color7"    , RGBA (7, 7, 7, 1))
+  , ("color8"    , brightBlack)
+  , ("color9"    , RGBA (9, 9, 9, 1))
+  , ("color10"   , RGBA (10, 10, 10, 1))
+  , ("color11"   , RGBA (11, 11, 11, 1))
+  , ("color12"   , RGBA (12, 12, 12, 1))
+  , ("color13"   , RGBA (13, 13, 13, 1))
+  , ("color14"   , RGBA (14, 14, 14, 1))
+  , ("color15"   , RGBA (15, 15, 15, 1))
   ]

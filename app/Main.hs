@@ -9,8 +9,8 @@ import           Data.Text.IO                  as TIO
 import           Data.ByteString.Lazy          as BL
 import           Data.Foldable
 import           Data.List                     as DL
-import           Alacritty
-import           X
+import           Apps.Alacritty
+import           Apps.X
 import           Options.Applicative
 import           Data.Semigroup                 ( (<>) )
 import           Control.Monad.IO.Class
