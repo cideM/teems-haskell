@@ -6,7 +6,7 @@ import           Lib
 import           Util
 import           Data.Text                     as T
 import           Data.Map.Strict               as DM
-import           Text.Trifecta
+import           Text.Trifecta           hiding ( line )
 import           Apps.ConfigCreator             ( missingColor
                                                 , OldLine
                                                 , NewLine
@@ -118,14 +118,14 @@ configCreator' theme config = fmap unlines' . Vec.sequence . snd $ DL.foldl
   (T.lines config)
  where
   lineP = choice [modeP, colorP]
-  run (m, ls) currentLine =
+  run (m, ls) line =
     let getColorValue' = getColorValue theme m
-    in  case parseText lineP currentLine of
+    in  case parseText lineP line of
           (Success (ColorName n)) ->
             (m, ls `Vec.snoc` maybe noColorMsg newLine newColorValue)
            where
             newColorValue = getColorValue' n
             noColorMsg    = Left $ missingColor n (_name theme)
-            newLine       = makeNewline currentLine
-          (Success (Mode m')) -> (m', ls `Vec.snoc` Right currentLine)
-          (Failure _        ) -> (m, ls `Vec.snoc` Right currentLine)
+            newLine       = makeNewline line
+          (Success (Mode m')) -> (m', ls `Vec.snoc` Right line)
+          (Failure _        ) -> (m, ls `Vec.snoc` Right line)
