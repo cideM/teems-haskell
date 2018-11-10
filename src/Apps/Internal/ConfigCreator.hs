@@ -5,7 +5,7 @@ import           Data.Text                     as T
 import           Data.Map                      as DM
 import           Text.Trifecta
 import           Parser.Internal
-import Util.Internal
+import           Util.Internal
 
 type LineParser = Parser T.Text
 
@@ -25,15 +25,14 @@ configCreator'
   -> Config
   -- ^^^ Config of a terminal emulator (e.g., contents of kitty.config)
   -> Either T.Text Config
-configCreator' lineP makeNewLine theme oldConfig =
-  fmap T.unlines . traverse mapper $ T.lines oldConfig
+configCreator' lineP mkLine t conf = fmap T.unlines (traverse f $ T.lines conf)
  where
-  getColorValue key = DM.lookup key (_colors theme)
-  mapper :: OldLine -> Either T.Text NewLine
-  mapper currentLine = case parseText lineP currentLine of
-    (Success colorName) -> maybe noColorMsg newLine newColorValue
+  getVal key = DM.lookup key (_colors t)
+  f :: OldLine -> Either T.Text NewLine
+  f curr = case parseText lineP curr of
+    (Success colorName) -> maybe noColorMsg newLine newVal
      where
-      noColorMsg    = Left $ missingColor colorName (_name theme)
-      newLine       = makeNewLine currentLine
-      newColorValue = getColorValue colorName
-    (Failure _) -> Right currentLine
+      noColorMsg = Left $ missingColor colorName (_name t)
+      newLine    = mkLine curr
+      newVal     = getVal colorName
+    (Failure _) -> Right curr

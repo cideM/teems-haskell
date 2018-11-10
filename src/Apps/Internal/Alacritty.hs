@@ -23,8 +23,8 @@ data Alacritty = ColorName T.Text | Mode AlacrittyMode deriving (Show, Eq)
 alacritty :: App
 alacritty = App "alacritty" configCreator' ["alacritty/alacritty.yml"]
 
-alacrittyColorNames :: [String]
-alacrittyColorNames =
+colorNames :: [String]
+colorNames =
   [ "black"
   , "red"
   , "green"
@@ -77,59 +77,55 @@ modeP =
 
 colorP :: Parser Alacritty
 colorP =
-  ColorName
-    .   T.pack
-    <$> (spaces *> choice (string <$> alacrittyColorNames) <* char ':')
+  ColorName . T.pack <$> (spaces *> choice (string <$> colorNames) <* char ':')
 
-lineWithoutColorValueP :: Parser T.Text
-lineWithoutColorValueP =
-  buildOutput
-    <$> many space
-    <*> choice (string <$> alacrittyColorNames)
-    <*> manyTill (choice [letter, char ':', space]) (try (string "'0x"))
+lineTillColorP :: Parser T.Text
+lineTillColorP =
+  mkOut <$> many space <*> choice (string <$> colorNames) <*> manyTill
+    (choice [letter, char ':', space])
+    (try (string "'0x"))
  where
-  buildOutput leading colorName filler =
+  mkOut leading colorName filler =
     let leading'   = T.pack leading
         colorName' = T.pack colorName
         filler'    = T.pack filler
     in  T.empty <> leading' <> colorName' <> filler'
 
-getColorValue :: Theme -> AlacrittyMode -> T.Text -> Maybe RGBA
-getColorValue theme mode color =
-  let map' = case mode of
+getVal :: Theme -> AlacrittyMode -> ColorName -> Maybe RGBA
+getVal t m n =
+  let map' = case m of
         Bright -> bright
         Normal -> normal
-      colors' = _colors theme
+      colors' = _colors t
   in  do
-        value <- DM.lookup color map'
+        value <- DM.lookup n map'
         DM.lookup value colors'
 
-makeNewline :: OldLine -> RGBA -> Either T.Text NewLine
-makeNewline oldLine color = case parseText lineWithoutColorValueP oldLine of
-  (Success leading) -> Right $ leading <> newValue
+mkLine :: OldLine -> RGBA -> Either T.Text NewLine
+mkLine l c = case parseText lineTillColorP l of
+  (Success leading) -> Right $ leading <> newVal
    where
-    newValue = "'0x" <> transform color <> "'"
-    transform c = let (HexColor (r, g, b)) = rgbaToHexColor c in r <> g <> b
+    (HexColor (r, g, b)) = rgbaToHexColor c
+    newVal               = "'0x" <> r <> g <> b <> "'"
   (Failure _) -> Left "Failed to parse leading part of old oldLine"
 
 unlines' :: Vec.Vector T.Text -> T.Text
 unlines' = Vec.foldl T.append T.empty . fmap (<> "\n")
 
 configCreator' :: Theme -> Config -> Either T.Text Config
-configCreator' theme config = fmap unlines' . Vec.sequence . snd $ DL.foldl
-  run
-  (Normal, Vec.empty)
-  (T.lines config)
+configCreator' t conf = fmap
+  unlines'
+  (Vec.sequence . snd $ DL.foldl run (Normal, Vec.empty) (T.lines conf))
  where
   lineP = choice [modeP, colorP]
   run (m, ls) line =
-    let getColorValue' = getColorValue theme m
+    let getVal' = getVal t m
     in  case parseText lineP line of
           (Success (ColorName n)) ->
-            (m, ls `Vec.snoc` maybe noColorMsg newLine newColorValue)
+            (m, ls `Vec.snoc` maybe noColorMsg newLine newVal)
            where
-            newColorValue = getColorValue' n
-            noColorMsg    = Left $ missingColor n (_name theme)
-            newLine       = makeNewline line
+            newVal     = getVal' n
+            noColorMsg = Left $ missingColor n (_name t)
+            newLine    = mkLine line
           (Success (Mode m')) -> (m', ls `Vec.snoc` Right line)
           (Failure _        ) -> (m, ls `Vec.snoc` Right line)

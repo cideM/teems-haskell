@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 
 module Types where
 
@@ -18,12 +19,18 @@ import           Data.Map.Strict               as Map
 data AppException = ThemeDecodeException | ThemeNotFoundException | TransformException T.Text deriving (Show)
 instance Exception AppException
 
-data Command = ListThemes | ActivateTheme ThemeName
+newtype ListThemesOptions = ListThemesOptions {
+  _configPath :: FilePath
+}
 
-data CLIOptions = CLIOptions ConfigPath Command
+data ActivateOptions = ActivateOptions {
+  _configPath :: FilePath,
+  _themeName :: ThemeName
+}
 
-type ConfigPath = String
-type ParseErr = T.Text
+data Command = ListThemes ListThemesOptions | Activate ActivateOptions | ListApps
+
+newtype Commands = Commands Command
 
 data App = App
     { _appName :: T.Text

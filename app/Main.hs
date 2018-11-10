@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 
 module Main where
 
@@ -28,23 +29,24 @@ getThemes p = do
     (Left  _     ) -> throw ThemeDecodeException
     (Right themes) -> return themes
 
+listApps :: (MonadThrow m, MonadIO m) => m ()
+listApps = traverse_ (liftIO . TIO.putStrLn . _appName) apps
+
 listThemes :: (MonadThrow m, MonadIO m) => FilePath -> m ()
-listThemes fp = do
-  themes <- getThemes fp
-  liftIO $ traverse_ (TIO.putStrLn . _name) themes
+listThemes fp = getThemes fp >>= liftIO . traverse_ (TIO.putStrLn . _name)
 
 activateTheme :: (MonadIO m, MonadThrow m) => Theme -> m ()
 activateTheme theme = liftIO $ traverse_ transform apps
  where
-  transform app = do
-    let transformFn = _configCreator app
-    configs <- liftIO . traverse getConfigPath $ _configPaths app
-    traverse_ (createNewConfig transformFn) configs
-  createNewConfig transformFn path = do
-    config <- TIO.readFile path
-    case transformFn theme config of
-      (Left  err    ) -> throw $ TransformException err
-      (Right config') -> TIO.writeFile path config'
+  transform app =
+    let maker = _configCreator app
+        fps   = _configPaths app
+    in  liftIO $ traverse getConfigPath fps >>= traverse_ (mkConfig maker)
+  mkConfig f fp = do
+    conf <- TIO.readFile fp
+    case f theme conf of
+      (Left  err  ) -> throw $ TransformException err
+      (Right conf') -> TIO.writeFile fp conf'
 
 findTheme :: (MonadThrow m) => ThemeName -> [Theme] -> m Theme
 findTheme tn ts = do
@@ -61,45 +63,66 @@ handleException e = liftIO $ TIO.putStrLn msg
     ThemeDecodeException   -> "Could not decode config file"
     TransformException err -> "Could transform config: " <> err
 
-parseConfigPath :: Parser ConfigPath
-parseConfigPath =
-  strOption $ short 'f' <> long "config" <> metavar "CONFIGPATH" <> help
+configPathP :: Parser FilePath
+configPathP =
+  strOption $ short 'f' <> long "config" <> metavar "CONFIG PATH" <> help
     "Path to config file containing the themes"
 
-parseListThemes :: Parser Command
-parseListThemes = pure ListThemes
+listAppsP :: Parser Command
+listAppsP = pure ListApps
 
-parseActivateTheme :: Parser Command
-parseActivateTheme = ActivateTheme <$> argument str (metavar "THEME NAME")
+listThemesP :: Parser Command
+listThemesP = ListThemes . ListThemesOptions <$> configPathP
 
-parseCommands :: Parser Command
-parseCommands =
+activateP :: Parser Command
+activateP = Activate <$> (ActivateOptions <$> configPathP <*> themeNameP)
+ where
+  themeNameP = strOption
+    (short 't' <> long "theme" <> metavar "THEME NAME" <> help
+      "Theme to activate"
+    )
+
+cmdP :: Parser Command
+cmdP =
   subparser
-    $  (command "list" . info parseListThemes $ progDesc "List all themes")
-    <> (command "activate" . info parseActivateTheme $ progDesc
-         "Activate a theme"
+    $  (command "list-themes" . info listThemesP $ progDesc "List all themes")
+    <> (command "list-apps" . info listAppsP $ progDesc
+         "List all supported apps"
        )
+    <> (command "activate" . info activateP $ progDesc "Activate a theme")
 
-parseOptions :: Parser CLIOptions
-parseOptions = CLIOptions <$> parseConfigPath <*> parseCommands
+parseOptions :: Parser Commands
+parseOptions = Commands <$> cmdP
 
-run :: (MonadThrow m, MonadIO m) => CLIOptions -> m ()
-run (CLIOptions path cmd) = case cmd of
-  ListThemes                    -> liftIO $ listThemes path
+cPathListThemes :: ListThemesOptions -> FilePath
+cPathListThemes = _configPath
 
-  (ActivateTheme selectedTheme) -> do
+cPathActivateThemes :: ActivateOptions -> FilePath
+cPathActivateThemes = _configPath
 
-    themes <- getThemes path
-    theme  <- findTheme selectedTheme themes
+run :: (MonadThrow m, MonadIO m) => Commands -> m ()
+run (Commands cmd) = case cmd of
+  ListThemes opts -> liftIO . listThemes $ cPathListThemes opts
+
+  ListApps        -> liftIO listApps
+
+  Activate opts   -> do
+    let name = _themeName opts
+
+    themes <- getThemes $ cPathActivateThemes opts
+    theme  <- findTheme name themes
 
     liftIO $ activateTheme theme
 
-    liftIO . TIO.putStrLn $ "Activated " <> selectedTheme
+    liftIO . TIO.putStrLn $ "Activated " <> name
 
 main :: IO ()
 main = do
   opts <- execParser
-    (info (helper <*> parseOptions)
-          (fullDesc <> header "Teems" <> progDesc "Descriptive foo")
+    (info
+      (helper <*> parseOptions)
+      (fullDesc <> header "Teems" <> progDesc
+        "Terminal emulator theme management made easy!"
+      )
     )
   run opts `catch` handleException
