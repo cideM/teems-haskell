@@ -4,8 +4,7 @@ module TestUtils where
 
 import           Text.Trifecta
 import           Data.Map                      as DM
-import           Colors
-import           Lib
+import           Types
 
 prs :: Parser a -> String -> Maybe a
 prs p s =

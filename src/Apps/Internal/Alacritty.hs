@@ -1,35 +1,27 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Apps.Alacritty where
+module Apps.Internal.Alacritty where
 
-import           Lib
-import           Util
+import           Types
+import           Util.Internal
+import           Data.Functor
 import           Data.Text                     as T
 import           Data.Map.Strict               as DM
+import           Parser.Internal
 import           Text.Trifecta           hiding ( line )
-import           Apps.ConfigCreator             ( missingColor
-                                                , OldLine
+import           Apps.Internal.ConfigCreator    ( OldLine
                                                 , NewLine
                                                 )
 import           Control.Applicative
+import           Data.Semigroup
 import           Data.List                     as DL
 import           Data.Vector                   as Vec
-import           Colors
 
 data AlacrittyMode = Normal | Bright deriving (Show, Eq)
 data Alacritty = ColorName T.Text | Mode AlacrittyMode deriving (Show, Eq)
 
 alacritty :: App
 alacritty = App "alacritty" configCreator' ["alacritty/alacritty.yml"]
-
-modeP :: Parser Alacritty
-modeP = try $ do
-  skipMany space
-  mode <- string "bright:" <|> string "normal:"
-  skipMany space
-  case mode of
-    "bright:" -> return $ Mode Bright
-    _         -> return $ Mode Normal
 
 alacrittyColorNames :: [String]
 alacrittyColorNames =
@@ -44,7 +36,6 @@ alacrittyColorNames =
   , "background"
   , "foreground"
   ]
-
 
 normal :: DM.Map T.Text T.Text
 normal = DM.fromList
@@ -74,6 +65,16 @@ bright = DM.fromList
   , ("white"     , "color15")
   ]
 
+modeP :: Parser Alacritty
+modeP =
+  try
+    $   Mode
+    <$> (   spaces
+        *>  (string "bright:" $> Bright)
+        <|> (string "normal:" $> Normal)
+        <*  spaces
+        )
+
 colorP :: Parser Alacritty
 colorP =
   ColorName
@@ -81,12 +82,17 @@ colorP =
     <$> (spaces *> choice (string <$> alacrittyColorNames) <* char ':')
 
 lineWithoutColorValueP :: Parser T.Text
-lineWithoutColorValueP = do
-  spaces'   <- T.pack <$> many space
-  colorName <- T.pack <$> choice (string <$> alacrittyColorNames)
-  padding   <- T.pack
-    <$> manyTill (choice [letter, char ':', space]) (try (string "'0x"))
-  return $ spaces' `T.append` colorName `T.append` padding
+lineWithoutColorValueP =
+  buildOutput
+    <$> many space
+    <*> choice (string <$> alacrittyColorNames)
+    <*> manyTill (choice [letter, char ':', space]) (try (string "'0x"))
+ where
+  buildOutput leading colorName filler =
+    let leading'   = T.pack leading
+        colorName' = T.pack colorName
+        filler'    = T.pack filler
+    in  T.empty <> leading' <> colorName' <> filler'
 
 getColorValue :: Theme -> AlacrittyMode -> T.Text -> Maybe RGBA
 getColorValue theme mode color =
@@ -100,16 +106,14 @@ getColorValue theme mode color =
 
 makeNewline :: OldLine -> RGBA -> Either T.Text NewLine
 makeNewline oldLine color = case parseText lineWithoutColorValueP oldLine of
-  (Success leading) -> Right $ leading `T.append` newValue
+  (Success leading) -> Right $ leading <> newValue
    where
-    newValue = "'0x" `T.append` transform color `T.append` "'"
-    transform c =
-      let (HexColor (r, g, b)) = rgbaToHexColor c
-      in  r `T.append` g `T.append` b
+    newValue = "'0x" <> transform color <> "'"
+    transform c = let (HexColor (r, g, b)) = rgbaToHexColor c in r <> g <> b
   (Failure _) -> Left "Failed to parse leading part of old oldLine"
 
 unlines' :: Vec.Vector T.Text -> T.Text
-unlines' = Vec.foldl T.append T.empty . fmap (`T.append` "\n")
+unlines' = Vec.foldl T.append T.empty . fmap (<> "\n")
 
 configCreator' :: Theme -> Config -> Either T.Text Config
 configCreator' theme config = fmap unlines' . Vec.sequence . snd $ DL.foldl

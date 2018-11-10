@@ -3,8 +3,8 @@
 module XTermSpec where
 
 import           TestUtils
-import           Apps.XTerm
-import           Lib
+import           Apps.Internal.XTerm
+import           Types
 import           Test.Hspec
 
 spec :: Spec

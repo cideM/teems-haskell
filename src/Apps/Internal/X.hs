@@ -1,13 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Apps.X where
+module Apps.Internal.X where
 
-import           Lib
+import           Types
 import           Data.Text                     as T
 import           Text.Trifecta
-import           Util
-import           Colors
-import           Apps.ConfigCreator
+import Util.Internal
+import           Parser.Internal
+import           Apps.Internal.ConfigCreator
+import           Data.Semigroup
 import           Text.Parser.LookAhead
 import           Data.List                      ( sortBy )
 
@@ -35,25 +36,28 @@ nameClassP
   -- Given ["*", "foo."] the parser will look for "*color5" and "foo.color5"
   -- Prefixes are sorted by descending length.
   -> Parser T.Text
-nameClassP prefixes = T.pack <$> choice prefixChoices <* lookAhead resourceP
- where
-  prefixes'     = sortBy lengthDesc $ fmap T.unpack prefixes
-  prefixChoices = string <$> prefixes'
+nameClassP prefixes = T.pack <$> choice ps <* lookAhead resourceP
+  where ps = string <$> sortBy lengthDesc (fmap T.unpack prefixes)
 
 xLineP :: [NameClassPrefix] -> Parser T.Text
 xLineP allowed = spaces *> nameClassP allowed *> resourceP
 
 lineWithoutColorP :: [NameClassPrefix] -> Parser T.Text
-lineWithoutColorP allowed = do
-  leading <- T.pack <$> many space
-  nc      <- nameClassP allowed
-  color   <- resourceP
-  middle  <- T.pack <$> some (choice [space, char ':'])
-  _       <- manyTill anyChar eof
-  return $ leading `T.append` nc `T.append` color `T.append` middle
+lineWithoutColorP allowed =
+  buildOutput
+    <$> many space
+    <*> nameClassP allowed
+    <*> resourceP
+    <*> some (choice [space, char ':'])
+    <*  manyTill anyChar eof
+ where
+  buildOutput leading nc res filler =
+    let leading' = T.pack leading
+        filler'  = T.pack filler
+    in  T.empty <> leading' <> nc <> res <> filler'
 
 makeNewLine :: [NameClassPrefix] -> OldLine -> RGBA -> Either T.Text NewLine
 makeNewLine allowed l color = case parseText (lineWithoutColorP allowed) l of
-  (Success leading) -> Right $ leading `T.append` hexAsText
+  (Success leading) -> Right $ leading <> hexAsText
     where hexAsText = displayHexColor $ rgbaToHexColor color
   (Failure _) -> Left "Failed to parse leading part of old line"

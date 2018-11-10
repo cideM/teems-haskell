@@ -3,9 +3,9 @@
 module TermiteSpec where
 
 import           TestUtils
-import           Apps.Termite
+import           Apps.Internal.Termite
 import           Test.Hspec
-import           Lib
+import           Types
 
 spec :: Spec
 spec =

@@ -1,13 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Apps.Kitty where
+module Apps.Internal.Kitty where
 
-import           Lib
+import           Types
+import           Data.Semigroup
 import           Data.Text                     as T
 import           Text.Trifecta
-import           Util
-import           Apps.ConfigCreator
-import           Colors
+import           Parser.Internal
+import           Apps.Internal.ConfigCreator
 
 kitty :: App
 kitty = App "kitty" (configCreator' lineP makeNewLine) ["kitty/kitty.config"]
@@ -28,6 +28,6 @@ lineWithoutColorP = T.pack <$> manyTill anyChar (char '#')
 
 makeNewLine :: OldLine -> RGBA -> Either T.Text NewLine
 makeNewLine l color = case parseText lineWithoutColorP l of
-  (Success leading) -> Right $ leading `T.append` hexAsText
+  (Success leading) -> Right $ leading <> hexAsText
     where hexAsText = displayHexColor $ rgbaToHexColor color
   (Failure _) -> Left "Failed to parse leading part of old line"

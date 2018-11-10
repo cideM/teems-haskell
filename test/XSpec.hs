@@ -3,8 +3,8 @@
 module XSpec where
 
 import           TestUtils
-import           Apps.X
-import           Lib
+import           Apps.Internal.X
+import           Types
 import           Test.Hspec
 
 spec :: Spec

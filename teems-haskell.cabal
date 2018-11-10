@@ -15,15 +15,17 @@ extra-source-files:  README.md
 
 library
   exposed-modules:
-      Apps.Alacritty
-    , Apps.ConfigCreator
-    , Apps.Kitty
-    , Apps.Termite
-    , Apps.X
-    , Apps.XTerm
-    , Colors
-    , Lib
-    , Util
+    Apps.Apps
+    , Types
+    , Apps.Internal.Alacritty
+    , Apps.Internal.ConfigCreator
+    , Apps.Internal.X
+    , Apps.Internal.XTerm
+    , Apps.Internal.Termite
+    , Apps.Internal.Kitty
+    , Util.Internal
+  other-modules:
+    Parser.Internal
   hs-source-dirs:
       src
   build-depends:
@@ -34,6 +36,7 @@ library
     , containers
     , parsers
     , text
+    , safe-exceptions
     , vector
   default-language: Haskell2010
 
@@ -61,6 +64,14 @@ test-suite teems-haskell-test
   main-is: Spec.hs
   hs-source-dirs:
       test
+  other-modules:
+    AlacrittySpec
+    , ColorSpec
+    , KittySpec
+    , TermiteSpec
+    , TestUtils
+    , XSpec
+    , XTermSpec
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
@@ -69,5 +80,4 @@ test-suite teems-haskell-test
     , trifecta
     , parsers
     , containers
-    , raw-strings-qq
   default-language: Haskell2010

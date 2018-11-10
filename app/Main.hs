@@ -2,32 +2,21 @@
 
 module Main where
 
-import           Lib
+import           Types
 import           Data.Aeson
-import           Data.Text                     as T
+import           System.Directory
 import           Data.Text.IO                  as TIO
 import           Data.ByteString.Lazy          as BL
 import           Data.Foldable
 import           Data.List                     as DL
-import           Apps.Alacritty
-import           Apps.X
-import           Apps.Termite
-import           Apps.Kitty
-import           Apps.XTerm
+import           Apps.Apps
 import           Options.Applicative
 import           Data.Semigroup                 ( (<>) )
 import           Control.Monad.IO.Class
 import           Control.Exception.Safe
 
-data AppException = ThemeDecodeException | ThemeNotFoundException | TransformException T.Text deriving (Show)
-instance Exception AppException
-
-data Command = ListThemes | ActivateTheme ThemeName
-
-data CLIOptions = CLIOptions ConfigPath Command
-
-type ConfigPath = String
-type ParseErr = T.Text
+getConfigPath :: FilePath -> IO FilePath
+getConfigPath = getXdgDirectory XdgConfig
 
 apps :: [App]
 apps = [alacritty, x, xTerm, kitty, termite]
@@ -70,7 +59,7 @@ handleException e = liftIO $ TIO.putStrLn msg
   msg = case e of
     ThemeNotFoundException -> "Theme not found"
     ThemeDecodeException   -> "Could not decode config file"
-    TransformException err -> "Could transform config: " `T.append` err
+    TransformException err -> "Could transform config: " <> err
 
 parseConfigPath :: Parser ConfigPath
 parseConfigPath =
@@ -105,7 +94,7 @@ run (CLIOptions path cmd) = case cmd of
 
     liftIO $ activateTheme theme
 
-    liftIO . TIO.putStrLn $ "Activated " `T.append` selectedTheme
+    liftIO . TIO.putStrLn $ "Activated " <> selectedTheme
 
 main :: IO ()
 main = do

@@ -1,25 +1,16 @@
-{-# LANGUAGE OverloadedStrings #-}
+module Apps.Internal.ConfigCreator where
 
-module Apps.ConfigCreator where
-
-import           Lib
+import           Types
 import           Data.Text                     as T
 import           Data.Map                      as DM
 import           Text.Trifecta
-import           Util
-import           Colors
+import           Parser.Internal
+import Util.Internal
 
 type LineParser = Parser T.Text
 
 type OldLine = T.Text
 type NewLine = T.Text
-
-missingColor :: ColorName -> ThemeName -> T.Text
-missingColor cName tName =
-  "Could not find color "
-    `T.append` cName
-    `T.append` " in theme "
-    `T.append` tName
 
 -- This isn't tested as it only makes sense in the context of those functions.
 -- That's probably a very bad practice but whatever. It's tested in
@@ -32,7 +23,7 @@ configCreator'
   -> Theme
   -- ^^^ Map of color name to RGBA color value
   -> Config
-  -- ^^^ Config of a terminal emulator (e.g., kitty.config)
+  -- ^^^ Config of a terminal emulator (e.g., contents of kitty.config)
   -> Either T.Text Config
 configCreator' lineP makeNewLine theme oldConfig =
   fmap T.unlines . traverse mapper $ T.lines oldConfig

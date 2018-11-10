@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Apps.XTerm where
+module Apps.Internal.XTerm where
 
-import           Apps.ConfigCreator
-import           Lib
+import           Apps.Internal.ConfigCreator
+import           Types
 import           Data.Text                     as T
-import           Apps.X                        as XResources
+import           Apps.Internal.X               as XResources
                                          hiding ( allowedPrefixes )
 
 xTerm :: App

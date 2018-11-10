@@ -3,8 +3,8 @@
 module KittySpec where
 
 import           TestUtils
-import           Apps.Kitty
-import           Lib
+import           Apps.Internal.Kitty
+import           Types
 import           Test.Hspec
 
 spec :: Spec

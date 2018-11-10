@@ -2,7 +2,7 @@
 
 module AlacrittySpec where
 
-import           Apps.Alacritty
+import           Apps.Internal.Alacritty
 import           Test.Hspec
 import           TestUtils
 

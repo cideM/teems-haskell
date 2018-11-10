@@ -1,13 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Apps.Termite where
+module Apps.Internal.Termite where
 
-import           Lib
+import           Types
 import           Data.Text                     as T
 import           Text.Trifecta
-import           Util
-import           Apps.ConfigCreator
-import           Colors
+import           Data.Semigroup
+import           Parser.Internal
+import           Apps.Internal.ConfigCreator
 
 termite :: App
 termite = App "termite" (configCreator' lineP makeNewLine) ["termite/config"]
@@ -29,16 +29,16 @@ lineWithoutColorP = T.pack <$> manyTill anyChar (char '#')
 
 makeNewLine :: OldLine -> RGBA -> Either T.Text NewLine
 makeNewLine l (RGBA (r, g, b, a)) = case parseText lineWithoutColorP l of
-  (Success leading) -> Right $ leading `T.append` rgbaText
+  (Success leading) -> Right $ leading <> rgbaText
    where
     rgbaText =
       "rgba("
-        `T.append` (T.pack . show $ r)
-        `T.append` ", "
-        `T.append` (T.pack . show $ g)
-        `T.append` ", "
-        `T.append` (T.pack . show $ b)
-        `T.append` ", "
-        `T.append` (T.pack . show $ a)
-        `T.append` ")"
+        <> (T.pack . show $ r)
+        <> ", "
+        <> (T.pack . show $ g)
+        <> ", "
+        <> (T.pack . show $ b)
+        <> ", "
+        <> (T.pack . show $ a)
+        <> ")"
   (Failure _) -> Left "Failed to parse leading part of old line"

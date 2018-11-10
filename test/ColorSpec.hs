@@ -1,10 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module ColorsSpec where
+module ColorSpec where
 
-import           Colors
 import           Test.Hspec
 import           TestUtils
+import Util.Internal
+import           Types
 
 spec :: Spec
 spec = do
