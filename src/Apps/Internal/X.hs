@@ -5,7 +5,7 @@ module Apps.Internal.X where
 import           Types
 import           Data.Text                     as T
 import           Text.Trifecta
-import Util.Internal
+import           Util.Internal
 import           Parser.Internal
 import           Apps.Internal.ConfigCreator
 import           Data.Semigroup
@@ -60,4 +60,5 @@ makeNewLine :: [NameClassPrefix] -> OldLine -> RGBA -> Either T.Text NewLine
 makeNewLine allowed l color = case parseText (lineWithoutColorP allowed) l of
   (Success leading) -> Right $ leading <> hexAsText
     where hexAsText = displayHexColor $ rgbaToHexColor color
-  (Failure _) -> Left "Failed to parse leading part of old line"
+  (Failure errInfo) ->
+    Left $ "Failed to parse leading part of old line: " <> T.pack (show errInfo)

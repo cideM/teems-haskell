@@ -7,6 +7,7 @@ import           Data.Semigroup
 import           Data.Text                     as T
 import           Text.Trifecta
 import           Parser.Internal
+import           Control.Applicative
 import           Apps.Internal.ConfigCreator
 
 kitty :: App
@@ -21,13 +22,14 @@ kittyColorP = T.pack <$> choice
   )
 
 lineP :: Parser T.Text
-lineP = spaces *> choice [colorNP, kittyColorP] <* spaces
+lineP = spaces *> choice [colorNP, kittyColorP] <* (some space <|> string "=")
 
-lineWithoutColorP :: Parser T.Text
-lineWithoutColorP = T.pack <$> manyTill anyChar (char '#')
+lineTillColorP :: Parser T.Text
+lineTillColorP = T.pack <$> manyTill anyChar (skipSome (char '#') <|> eof)
 
 makeNewLine :: OldLine -> RGBA -> Either T.Text NewLine
-makeNewLine l color = case parseText lineWithoutColorP l of
+makeNewLine l color = case parseText lineTillColorP l of
   (Success leading) -> Right $ leading <> hexAsText
     where hexAsText = displayHexColor $ rgbaToHexColor color
-  (Failure _) -> Left "Failed to parse leading part of old line"
+  (Failure errInfo) ->
+    Left $ "Failed to parse leading part of old line: " <> T.pack (show errInfo)

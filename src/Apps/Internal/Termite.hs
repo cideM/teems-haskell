@@ -7,10 +7,11 @@ import           Data.Text                     as T
 import           Text.Trifecta
 import           Data.Semigroup
 import           Parser.Internal
+import           Control.Applicative
 import           Apps.Internal.ConfigCreator
 
 termite :: App
-termite = App "termite" (configCreator' lineP makeNewLine) ["termite/config"]
+termite = App "termite" (configCreator' lineP mkLine) ["termite/config"]
 
 -- Excluding colorN (color0, color100,...)
 termiteColorP :: Parser T.Text
@@ -22,13 +23,14 @@ termiteColorP = T.pack <$> choice
 
 
 lineP :: Parser T.Text
-lineP = spaces *> choice [colorNP, termiteColorP] <* spaces
+lineP =
+  spaces *> choice [colorNP, termiteColorP] <* (some space <|> string "=")
 
-lineWithoutColorP :: Parser T.Text
-lineWithoutColorP = T.pack <$> manyTill anyChar (char '#')
+lineTillColorP :: Parser T.Text
+lineTillColorP = T.pack <$> manyTill anyChar (skipSome (char '#') <|> eof)
 
-makeNewLine :: OldLine -> RGBA -> Either T.Text NewLine
-makeNewLine l (RGBA (r, g, b, a)) = case parseText lineWithoutColorP l of
+mkLine :: OldLine -> RGBA -> Either T.Text NewLine
+mkLine l (RGBA (r, g, b, a)) = case parseText lineTillColorP l of
   (Success leading) -> Right $ leading <> rgbaText
    where
     rgbaText =
@@ -41,4 +43,5 @@ makeNewLine l (RGBA (r, g, b, a)) = case parseText lineWithoutColorP l of
         <> ", "
         <> (T.pack . show $ a)
         <> ")"
-  (Failure _) -> Left "Failed to parse leading part of old line"
+  (Failure errInfo) ->
+    Left $ "Failed to parse leading part of old line: " <> T.pack (show errInfo)

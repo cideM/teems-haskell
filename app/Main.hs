@@ -12,6 +12,7 @@ import           Data.ByteString.Lazy          as BL
 import           Data.Foldable
 import           Data.List                     as DL
 import           Apps.Apps
+import           Control.Monad
 import           Options.Applicative
 import           Data.Semigroup                 ( (<>) )
 import           Control.Monad.IO.Class
@@ -42,11 +43,14 @@ activateTheme theme = liftIO $ traverse_ transform apps
   transform app =
     let maker = _configCreator app
         fps   = _configPaths app
-    in  liftIO $ traverse getConfigPath fps >>= traverse_ (mkConfig maker)
+    in  liftIO
+        $   traverse getConfigPath fps
+        >>= filterM doesFileExist
+        >>= traverse_ (mkConfig maker)
   mkConfig f fp = do
     conf <- TIO.readFile fp
     case f theme conf of
-      (Left  err  ) -> throw $ TransformException err
+      (Left  err  ) -> throw $ TransformException err fp
       (Right conf') -> TIO.writeFile fp conf'
 
 findTheme :: (MonadThrow m) => ThemeName -> [Theme] -> m Theme
@@ -62,7 +66,8 @@ handleException e = liftIO $ TIO.putStrLn msg
   msg = case e of
     ThemeNotFoundException   -> "Theme not found"
     ThemeDecodeException err -> "Could not decode config file: " <> err
-    TransformException   err -> "Could transform config: " <> err
+    TransformException err fp ->
+      "Could not transform " <> T.pack fp <> "\n" <> err
 
 configPathP :: Parser FilePath
 configPathP =
@@ -108,14 +113,14 @@ run (Commands cmd) = case cmd of
   ListApps        -> liftIO listApps
 
   Activate opts   -> do
-    let name = _themeName opts
+    let n = _themeName opts
 
     themes <- getThemes $ cPathActivateThemes opts
-    theme  <- findTheme name themes
+    theme  <- findTheme n themes
 
     liftIO $ activateTheme theme
 
-    liftIO . TIO.putStrLn $ "Activated " <> name
+    liftIO . TIO.putStrLn $ "Activated " <> n
 
 main :: IO ()
 main = do

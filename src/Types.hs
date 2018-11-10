@@ -16,7 +16,9 @@ import           GHC.Generics
 import           Control.Exception.Safe
 import           Data.Map.Strict               as Map
 
-data AppException = ThemeDecodeException T.Text | ThemeNotFoundException | TransformException T.Text deriving (Show)
+type ErrMsg = T.Text
+
+data AppException = ThemeDecodeException T.Text | ThemeNotFoundException | TransformException ErrMsg FilePath deriving (Show)
 instance Exception AppException
 
 newtype ListThemesOptions = ListThemesOptions {

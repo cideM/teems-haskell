@@ -8,7 +8,36 @@ import           Test.Hspec
 import           Types
 
 spec :: Spec
-spec =
+spec = do
+  describe "lineP" $ do
+    it "should not parse partial matches"
+      $          prs lineP "cursor_blink = system"
+      `shouldBe` Nothing
+    it "should parse without spaces"
+      $          prs lineP "cursor=#ffffff"
+      `shouldBe` Just "cursor"
+    it "should parse with spaces"
+      $          prs lineP "cursor = #ffffff"
+      `shouldBe` Just "cursor"
+    it "should parse empty value"
+      $          prs lineP "cursor = "
+      `shouldBe` Just "cursor"
+    it "should parse empty value without space"
+      $          prs lineP "cursor ="
+      `shouldBe` Just "cursor"
+  describe "lineTillColorP" $ do
+    it "should parse without spaces (lineTillColorP)"
+      $          prs lineTillColorP "cursor=#ffffff"
+      `shouldBe` Just "cursor="
+    it "should parse with spaces (lineTillColorP)"
+      $          prs lineTillColorP "cursor = #ffffff"
+      `shouldBe` Just "cursor = "
+    it "should parse empty value (lineTillColorP)"
+      $          prs lineTillColorP "cursor = "
+      `shouldBe` Just "cursor = "
+    it "should parse empty value without space (lineTillColorP)"
+      $          prs lineTillColorP "cursor ="
+      `shouldBe` Just "cursor ="
   describe "configCreator"
     $ it "should replace colors with those from the theme"
     $ do

@@ -107,7 +107,9 @@ mkLine l c = case parseText lineTillColorP l of
    where
     (HexColor (r, g, b)) = rgbaToHexColor c
     newVal               = "'0x" <> r <> g <> b <> "'"
-  (Failure _) -> Left "Failed to parse leading part of old oldLine"
+  (Failure errInfo) ->
+    Left $ "Failed to parse leading part of old line: " <> T.pack
+      (show errInfo)
 
 unlines' :: Vec.Vector T.Text -> T.Text
 unlines' = Vec.foldl T.append T.empty . fmap (<> "\n")
