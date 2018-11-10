@@ -25,12 +25,12 @@ spec = do
     it "should skip commented lines"
       $          prs colorP "#   black: '0x000000'"
       `shouldBe` Nothing
-  describe "getColorValue" $ do
+  describe "getVal" $ do
     it "should return normal colors"
-      $          getColorValue testTheme Normal "black"
+      $          getVal testTheme Normal "black"
       `shouldBe` Just black
     it "should return bright colors"
-      $          getColorValue testTheme Bright "black"
+      $          getVal testTheme Bright "black"
       `shouldBe` Just brightBlack
   describe "configCreator'"
     $ it "should return a new config based on the theme"

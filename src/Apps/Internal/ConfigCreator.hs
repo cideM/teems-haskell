@@ -27,12 +27,12 @@ configCreator'
   -> Either T.Text Config
 configCreator' lineP mkLine t conf = fmap T.unlines (traverse f $ T.lines conf)
  where
-  getVal key = DM.lookup key (_colors t)
+  getVal key = DM.lookup key (colors t)
   f :: OldLine -> Either T.Text NewLine
   f curr = case parseText lineP curr of
     (Success colorName) -> maybe noColorMsg newLine newVal
      where
-      noColorMsg = Left $ missingColor colorName (_name t)
+      noColorMsg = Left $ missingColor colorName (name t)
       newLine    = mkLine curr
       newVal     = getVal colorName
     (Failure _) -> Right curr

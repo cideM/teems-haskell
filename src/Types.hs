@@ -16,7 +16,7 @@ import           GHC.Generics
 import           Control.Exception.Safe
 import           Data.Map.Strict               as Map
 
-data AppException = ThemeDecodeException | ThemeNotFoundException | TransformException T.Text deriving (Show)
+data AppException = ThemeDecodeException T.Text | ThemeNotFoundException | TransformException T.Text deriving (Show)
 instance Exception AppException
 
 newtype ListThemesOptions = ListThemesOptions {
@@ -48,8 +48,12 @@ type ThemeName = T.Text
 type Config = T.Text
 
 data Theme = Theme
-    { _name :: ThemeName
-    , _colors :: Map.Map ColorName RGBA
+    { name :: ThemeName
+    -- ^^^ No underscore here since aeson will try to look for a key named
+    -- "name", not "_name"
+    , colors :: Map.Map ColorName RGBA
+    -- ^^^ No underscore here since aeson will try to look for a key named
+    -- "colors", not "_colors"
     } deriving (Generic, Show)
 
 instance FromJSON Theme

@@ -96,7 +96,7 @@ getVal t m n =
   let map' = case m of
         Bright -> bright
         Normal -> normal
-      colors' = _colors t
+      colors' = colors t
   in  do
         value <- DM.lookup n map'
         DM.lookup value colors'
@@ -125,7 +125,7 @@ configCreator' t conf = fmap
             (m, ls `Vec.snoc` maybe noColorMsg newLine newVal)
            where
             newVal     = getVal' n
-            noColorMsg = Left $ missingColor n (_name t)
+            noColorMsg = Left $ missingColor n (name t)
             newLine    = mkLine line
           (Success (Mode m')) -> (m', ls `Vec.snoc` Right line)
           (Failure _        ) -> (m, ls `Vec.snoc` Right line)

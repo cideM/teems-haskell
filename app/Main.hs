@@ -6,6 +6,7 @@ module Main where
 import           Types
 import           Data.Aeson
 import           System.Directory
+import           Data.Text                     as T
 import           Data.Text.IO                  as TIO
 import           Data.ByteString.Lazy          as BL
 import           Data.Foldable
@@ -26,14 +27,14 @@ getThemes :: (MonadThrow m, MonadIO m) => FilePath -> m [Theme]
 getThemes p = do
   contents <- liftIO $ BL.readFile p
   case eitherDecode contents of
-    (Left  _     ) -> throw ThemeDecodeException
+    (Left  err   ) -> throw . ThemeDecodeException $ T.pack err
     (Right themes) -> return themes
 
 listApps :: (MonadThrow m, MonadIO m) => m ()
 listApps = traverse_ (liftIO . TIO.putStrLn . _appName) apps
 
 listThemes :: (MonadThrow m, MonadIO m) => FilePath -> m ()
-listThemes fp = getThemes fp >>= liftIO . traverse_ (TIO.putStrLn . _name)
+listThemes fp = getThemes fp >>= liftIO . traverse_ (TIO.putStrLn . name)
 
 activateTheme :: (MonadIO m, MonadThrow m) => Theme -> m ()
 activateTheme theme = liftIO $ traverse_ transform apps
@@ -50,7 +51,7 @@ activateTheme theme = liftIO $ traverse_ transform apps
 
 findTheme :: (MonadThrow m) => ThemeName -> [Theme] -> m Theme
 findTheme tn ts = do
-  let result = DL.find ((==) tn . _name) ts
+  let result = DL.find ((==) tn . name) ts
   case result of
     Nothing  -> throw ThemeNotFoundException
     (Just a) -> return a
@@ -59,13 +60,13 @@ handleException :: (MonadIO m) => AppException -> m ()
 handleException e = liftIO $ TIO.putStrLn msg
  where
   msg = case e of
-    ThemeNotFoundException -> "Theme not found"
-    ThemeDecodeException   -> "Could not decode config file"
-    TransformException err -> "Could transform config: " <> err
+    ThemeNotFoundException   -> "Theme not found"
+    ThemeDecodeException err -> "Could not decode config file: " <> err
+    TransformException   err -> "Could transform config: " <> err
 
 configPathP :: Parser FilePath
 configPathP =
-  strOption $ short 'f' <> long "config" <> metavar "CONFIG PATH" <> help
+  strOption $ short 'c' <> long "config" <> metavar "CONFIG PATH" <> help
     "Path to config file containing the themes"
 
 listAppsP :: Parser Command
