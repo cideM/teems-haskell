@@ -18,8 +18,16 @@ import           Data.Map.Strict               as Map
 
 type ErrMsg = T.Text
 
-data AppException = ThemeDecodeException T.Text | ThemeNotFoundException | TransformException ErrMsg FilePath deriving (Show)
+data AppException
+  = ThemeDecodeException T.Text -- ^ When failing to decode with aeson
+  | ThemeNotFoundException -- ^ When theme is not found in config file passed via args
+  | TransformException ErrMsg FilePath -- ^ When failing in the transforms function of a particular app (e.g., Apps.Alacritty configCreator)
+  deriving (Show)
+
 instance Exception AppException
+
+-- The following types are modelled as outlined in the documentation for
+-- optparse-applicative
 
 newtype ListThemesOptions = ListThemesOptions {
   _configPath :: FilePath
@@ -35,8 +43,13 @@ data Command = ListThemes ListThemesOptions | Activate ActivateOptions | ListApp
 newtype Commands = Commands Command
 
 data App = App
-    { _appName :: T.Text
-    , _configCreator :: Theme -> T.Text -> Either T.Text T.Text
+    { -- | Name of the terminal emulator (e.g., alacritty)
+      _appName :: T.Text
+      -- | A function that returns a an error message or a new config
+    , _configCreator :: Theme -> T.Text -> Either ErrMsg T.Text
+      -- | Paths where the config file can be found. The string is latter
+      -- traversed with a function from System.Directory, hence no IO here.
+      -- Existence of config files is checked later on.
     , _configPaths :: [FilePath]
     }
 
@@ -50,12 +63,13 @@ type ThemeName = T.Text
 type Config = T.Text
 
 data Theme = Theme
-    { name :: ThemeName
-    -- ^^^ No underscore here since aeson will try to look for a key named
-    -- "name", not "_name"
+    {
+      -- | Name of the theme. No underscore here since aeson will try to look
+      -- for a key named "name", not "_name"
+      name :: ThemeName
+      -- | Map from color name to color value. No underscore here since aeson
+      -- will try to look for a key named "colors", not "_colors"
     , colors :: Map.Map ColorName RGBA
-    -- ^^^ No underscore here since aeson will try to look for a key named
-    -- "colors", not "_colors"
     } deriving (Generic, Show)
 
 instance FromJSON Theme
@@ -69,6 +83,7 @@ displayHexColor (HexColor (r, g, b)) = "#" <> r <> g <> b
 instance Show HexColor where
   show = show . T.unpack . displayHexColor
 
+-- | hexP parses hex color value such as #FFFFFF. Does not accept #FFF
 hexP :: Parser HexColor
 hexP = do
   _ <- char '#'

@@ -17,12 +17,36 @@ import           Data.Semigroup
 import           Data.List                     as DL
 import           Data.Vector                   as Vec
 
+-- | AlacrittyMode exists because Alacritty's config has two color blocks, one
+-- for normal colors (0-7) and one for bright colors (color8-15)
 data AlacrittyMode = Normal | Bright deriving (Show, Eq)
+
+-- | Alacritty is the parse result of a line in the Alacritty config.
+-- It can either be a color name (e.g., black), or a mode (see above)
 data Alacritty = ColorName T.Text | Mode AlacrittyMode deriving (Show, Eq)
 
 alacritty :: App
 alacritty = App "alacritty" configCreator' ["alacritty/alacritty.yml"]
+ where
+  lineP = choice [modeP, colorP]
+  configCreator' t conf = fmap
+    unlines'
+    (Vec.sequence . snd $ DL.foldl run (Normal, Vec.empty) (T.lines conf))
+   where
+    run (m, ls) line =
+      let getVal' = getVal t m
+      in  case parseText lineP line of
+            (Success (ColorName n)) ->
+              (m, ls `Vec.snoc` maybe noColorMsg newLine newVal)
+             where
+              newVal     = getVal' n
+              noColorMsg = Left $ missingColor n (name t)
+              newLine    = mkLine line
+            (Success (Mode m')) -> (m', ls `Vec.snoc` Right line)
+            (Failure _        ) -> (m, ls `Vec.snoc` Right line)
 
+-- | colorNames includes all color names we parse and on which lines we replace
+-- the color value with a new one from the theme
 colorNames :: [String]
 colorNames =
   [ "black"
@@ -36,6 +60,10 @@ colorNames =
   , "background"
   , "foreground"
   ]
+
+-- He're I am mapping the non-unique color names from Alacritty's config file to
+-- the actual color names from the theme, depending on the color block (= mode)
+-- we're in
 
 normal :: DM.Map T.Text T.Text
 normal = DM.fromList
@@ -65,6 +93,7 @@ bright = DM.fromList
   , ("white"     , "color15")
   ]
 
+-- | modeP parses the mode of the current color block
 modeP :: Parser Alacritty
 modeP =
   try
@@ -75,10 +104,14 @@ modeP =
         <*  spaces
         )
 
+-- | colorP parses the name of a color (e.g., black)
 colorP :: Parser Alacritty
 colorP =
   ColorName . T.pack <$> (spaces *> choice (string <$> colorNames) <* char ':')
 
+-- | lineTillColorP parses all characters until the start of the color value.
+-- This way we can keep user specific indentation when replacing the color
+-- value.
 lineTillColorP :: Parser T.Text
 lineTillColorP =
   mkOut <$> many space <*> choice (string <$> colorNames) <*> manyTill
@@ -91,6 +124,9 @@ lineTillColorP =
         filler'    = T.pack filler
     in  T.empty <> leading' <> colorName' <> filler'
 
+-- | getVal returns a new color value if one exists in the current theme. Needs
+-- to take the current color block (= mode) into account, so the correct map is
+-- queried
 getVal :: Theme -> AlacrittyMode -> ColorName -> Maybe RGBA
 getVal t m n =
   let map' = case m of
@@ -101,33 +137,16 @@ getVal t m n =
         value <- DM.lookup n map'
         DM.lookup value colors'
 
-mkLine :: OldLine -> RGBA -> Either T.Text NewLine
+-- | mkLine creates a new line with which we can replace the old line in the
+-- config file
+mkLine :: OldLine -> RGBA -> Either ErrMsg NewLine
 mkLine l c = case parseText lineTillColorP l of
   (Success leading) -> Right $ leading <> newVal
    where
     (HexColor (r, g, b)) = rgbaToHexColor c
     newVal               = "'0x" <> r <> g <> b <> "'"
   (Failure errInfo) ->
-    Left $ "Failed to parse leading part of old line: " <> T.pack
-      (show errInfo)
+    Left $ "Failed to parse leading part of old line: " <> T.pack (show errInfo)
 
 unlines' :: Vec.Vector T.Text -> T.Text
 unlines' = Vec.foldl T.append T.empty . fmap (<> "\n")
-
-configCreator' :: Theme -> Config -> Either T.Text Config
-configCreator' t conf = fmap
-  unlines'
-  (Vec.sequence . snd $ DL.foldl run (Normal, Vec.empty) (T.lines conf))
- where
-  lineP = choice [modeP, colorP]
-  run (m, ls) line =
-    let getVal' = getVal t m
-    in  case parseText lineP line of
-          (Success (ColorName n)) ->
-            (m, ls `Vec.snoc` maybe noColorMsg newLine newVal)
-           where
-            newVal     = getVal' n
-            noColorMsg = Left $ missingColor n (name t)
-            newLine    = mkLine line
-          (Success (Mode m')) -> (m', ls `Vec.snoc` Right line)
-          (Failure _        ) -> (m, ls `Vec.snoc` Right line)

@@ -11,7 +11,14 @@ import           Control.Applicative
 import           Apps.Internal.ConfigCreator
 
 kitty :: App
-kitty = App "kitty" (configCreator' lineP makeNewLine) ["kitty/kitty.config"]
+kitty = App "kitty" (configCreator' lineP mkLine) ["kitty/kitty.config"]
+  where
+    lineP =spaces *> choice [colorNP, kittyColorP] <* (some space <|> string "=")
+    mkLine l c = case parseText lineTillColorP l of
+      (Success leading) -> Right $ leading <> hex
+        where hex = displayHexColor $ rgbaToHexColor c
+      (Failure errInfo) ->
+        Left $ "Failed to parse leading part of old line: " <> T.pack (show errInfo)
 
 -- Excluding colorN (color0, color100,...)
 kittyColorP :: Parser T.Text
@@ -21,15 +28,5 @@ kittyColorP = T.pack <$> choice
     ["foreground", "selection_foreground", "selection_background", "background"]
   )
 
-lineP :: Parser T.Text
-lineP = spaces *> choice [colorNP, kittyColorP] <* (some space <|> string "=")
-
 lineTillColorP :: Parser T.Text
 lineTillColorP = T.pack <$> manyTill anyChar (skipSome (char '#') <|> eof)
-
-makeNewLine :: OldLine -> RGBA -> Either T.Text NewLine
-makeNewLine l color = case parseText lineTillColorP l of
-  (Success leading) -> Right $ leading <> hexAsText
-    where hexAsText = displayHexColor $ rgbaToHexColor color
-  (Failure errInfo) ->
-    Left $ "Failed to parse leading part of old line: " <> T.pack (show errInfo)
