@@ -1,9 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Util.Internal
-  ( hexColorToRGBA
-  , rgbaToHexColor
-  , lengthDesc
+  ( lengthDesc
   , missingColor
   )
 where
