@@ -1,4 +1,4 @@
-# teems-haskell
+# teems-haskell :dizzy:
 
 ## Quick start
 
