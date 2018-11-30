@@ -2,31 +2,32 @@
 
 ## Quick start
 
-Create `config.json` in your home directory.
+Create `config.json` in your home directory using RGBA values as `json` arrays.
 
 ```json
 [
     {
         "name": "zenburn",
         "colors": {
-            "foreground": "#dcdccc",
-            "background": "#3f3f3f",
-            "color0": "#1f1f1f",
-            "color8": "#709080",
-            "color1": "#705050",
-            "color9": "#dca3a3",
-            "color2": "#60b48a",
-            "color10": "#c3bf9f",
-            "color3": "#dfaf8f",
-            "color11": "#f0dfaf",
-            "color4": "#506070",
-            "color12": "#94bff3",
-            "color5": "#dc8cc3",
-            "color13": "#ec93d3",
-            "color6": "#8cd0d3",
-            "color14": "#93e0e3",
-            "color7": "#dcdccc",
-            "color15": "#ffffff"
+            "cursor": [255, 255, 255, 1],
+            "foreground": [220, 220, 204, 1],
+            "background": [63, 63, 63, 1],
+            "color0": [31, 31, 31, 1],
+            "color8": [112, 144, 128, 1],
+            "color1": [112, 80, 80, 1],
+            "color9": [220, 163, 163, 1],
+            "color2": [96, 180, 138, 1],
+            "color10": [195, 191, 159, 1],
+            "color3": [223, 175, 143, 1],
+            "color11": [240, 223, 175, 1],
+            "color4": [80, 96, 112, 1],
+            "color12": [148, 191, 243, 1],
+            "color5": [220, 140, 195, 1],
+            "color13": [236, 147, 211, 1],
+            "color6": [140, 208, 211, 1],
+            "color14": [147, 224, 227, 1],
+            "color7": [220, 220, 204, 1],
+            "color15": [255, 255, 255, 1]
         }
     }
 ]
