@@ -1,5 +1,9 @@
 # teems-haskell
 
+## Description
+
+This is a toy project! It reads a config file where you can specify color themes. Activating a color scheme will try to read the config files of all supported terminal emulators, and in each config file, replace the old colors with the new colors from the selected theme.
+
 ## Quick start
 
 Create `config.json` in your home directory using RGBA values as `json` arrays.
