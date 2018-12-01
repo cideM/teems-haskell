@@ -6,11 +6,11 @@ module Main where
 import           Types
 import           Data.Aeson
 import           System.Directory
-import           Data.Text                     as T
-import           Data.Text.IO                  as TIO
-import           Data.ByteString.Lazy          as BL
+import           Data.Text                     as Text
+import           Data.Text.IO                  as TextIO
+import           Data.ByteString.Lazy          as ByteStringLazy
 import           Data.Foldable
-import           Data.List                     as DL
+import           Data.List                     as List
 import           Apps.Apps
 import           Control.Monad
 import           Options.Applicative
@@ -26,16 +26,16 @@ apps = [alacritty, x, xTerm, kitty, termite]
 
 getThemes :: (MonadThrow m, MonadIO m) => FilePath -> m [Theme]
 getThemes p = do
-  contents <- liftIO $ BL.readFile p
+  contents <- liftIO $ ByteStringLazy.readFile p
   case eitherDecode contents of
-    (Left  err   ) -> throw . ThemeDecodeException $ T.pack err
+    (Left  err   ) -> throw . ThemeDecodeException $ Text.pack err
     (Right themes) -> return themes
 
 listApps :: (MonadThrow m, MonadIO m) => m ()
-listApps = traverse_ (liftIO . TIO.putStrLn . _appName) apps
+listApps = traverse_ (liftIO . TextIO.putStrLn . _appName) apps
 
 listThemes :: (MonadThrow m, MonadIO m) => FilePath -> m ()
-listThemes fp = getThemes fp >>= liftIO . traverse_ (TIO.putStrLn . name)
+listThemes fp = getThemes fp >>= liftIO . traverse_ (TextIO.putStrLn . name)
 
 activateTheme :: (MonadIO m, MonadThrow m) => Theme -> m ()
 activateTheme theme = liftIO $ traverse_ transform apps
@@ -48,26 +48,26 @@ activateTheme theme = liftIO $ traverse_ transform apps
         >>= filterM doesFileExist
         >>= traverse_ (mkConfig maker)
   mkConfig f fp = do
-    conf <- TIO.readFile fp
+    conf <- TextIO.readFile fp
     case f theme conf of
       (Left  err  ) -> throw $ TransformException err fp
-      (Right conf') -> TIO.writeFile fp conf'
+      (Right conf') -> TextIO.writeFile fp conf'
 
 findTheme :: (MonadThrow m) => ThemeName -> [Theme] -> m Theme
 findTheme tn ts = do
-  let result = DL.find ((==) tn . name) ts
+  let result = List.find ((==) tn . name) ts
   case result of
     Nothing  -> throw ThemeNotFoundException
     (Just a) -> return a
 
 handleException :: (MonadIO m) => AppException -> m ()
-handleException e = liftIO $ TIO.putStrLn msg
+handleException e = liftIO $ TextIO.putStrLn msg
  where
   msg = case e of
     ThemeNotFoundException   -> "Theme not found"
     ThemeDecodeException err -> "Could not decode config file: " <> err
     TransformException err fp ->
-      "Could not transform " <> T.pack fp <> "\n" <> err
+      "Could not transform " <> Text.pack fp <> "\n" <> err
 
 configPathP :: Parser FilePath
 configPathP =
@@ -120,7 +120,7 @@ run (Commands cmd) = case cmd of
 
     liftIO $ activateTheme theme
 
-    liftIO . TIO.putStrLn $ "Activated " <> n
+    liftIO . TextIO.putStrLn $ "Activated " <> n
 
 main :: IO ()
 main = do

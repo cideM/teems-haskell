@@ -1,13 +1,13 @@
 module Parser.Internal where
 
-import           Data.Text                     as T
+import qualified Data.Text                     as Text
 import           Data.Semigroup
 import           Text.Trifecta                 as Trifecta
 
 -- | parseText is a convenience wrapper around parseString
-parseText :: Parser a -> T.Text -> Trifecta.Result a
-parseText p = parseString p mempty . T.unpack
+parseText :: Parser a -> Text.Text -> Trifecta.Result a
+parseText p = parseString p mempty . Text.unpack
 
 -- | colorNP parses colorN (color2, color200, ...)
-colorNP :: Parser T.Text
-colorNP = T.pack . (<>) "color" <$> (string "color" *> some digit)
+colorNP :: Parser Text.Text
+colorNP = Text.pack . (<>) "color" <$> (string "color" *> some digit)

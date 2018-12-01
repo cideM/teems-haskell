@@ -5,8 +5,8 @@ module Apps.Internal.Alacritty where
 import           Types
 import           Util.Internal
 import           Data.Functor
-import           Data.Text                     as T
-import           Data.Map.Strict               as DM
+import qualified Data.Text                     as Text
+import qualified Data.Map.Strict               as MapStrict
 import           Parser.Internal
 import           Text.Trifecta           hiding ( line )
 import           Apps.Internal.ConfigCreator    ( OldLine
@@ -14,8 +14,8 @@ import           Apps.Internal.ConfigCreator    ( OldLine
                                                 )
 import           Control.Applicative
 import           Data.Semigroup
-import           Data.List                     as DL
-import           Data.Vector                   as Vec
+import qualified Data.List                     as List
+import qualified Data.Vector                   as Vector
 
 -- | AlacrittyMode exists because Alacritty's config has two color blocks, one
 -- for normal colors (0-7) and one for bright colors (color8-15)
@@ -23,7 +23,7 @@ data AlacrittyMode = Normal | Bright deriving (Show, Eq)
 
 -- | Alacritty is the parse result of a line in the Alacritty config.
 -- It can either be a color name (e.g., black), or a mode (see above)
-data Alacritty = ColorName T.Text | Mode AlacrittyMode deriving (Show, Eq)
+data Alacritty = ColorName Text.Text | Mode AlacrittyMode deriving (Show, Eq)
 
 alacritty :: App
 alacritty = App "alacritty" configCreator' ["alacritty/alacritty.yml"]
@@ -31,19 +31,22 @@ alacritty = App "alacritty" configCreator' ["alacritty/alacritty.yml"]
   lineP = choice [modeP, colorP]
   configCreator' t conf = fmap
     unlines'
-    (Vec.sequence . snd $ DL.foldl run (Normal, Vec.empty) (T.lines conf))
+    (Vector.sequence . snd $ List.foldl run
+                                        (Normal, Vector.empty)
+                                        (Text.lines conf)
+    )
    where
     run (m, ls) line =
       let getVal' = getVal t m
       in  case parseText lineP line of
             (Success (ColorName n)) ->
-              (m, ls `Vec.snoc` maybe noColorMsg newLine newVal)
+              (m, ls `Vector.snoc` maybe noColorMsg newLine newVal)
              where
               newVal     = getVal' n
               noColorMsg = Left $ missingColor n (name t)
               newLine    = mkLine line
-            (Success (Mode m')) -> (m', ls `Vec.snoc` Right line)
-            (Failure _        ) -> (m, ls `Vec.snoc` Right line)
+            (Success (Mode m')) -> (m', ls `Vector.snoc` Right line)
+            (Failure _        ) -> (m, ls `Vector.snoc` Right line)
 
 -- | colorNames includes all color names we parse and on which lines we replace
 -- the color value with a new one from the theme
@@ -65,8 +68,8 @@ colorNames =
 -- the actual color names from the theme, depending on the color block (= mode)
 -- we're in
 
-normal :: DM.Map T.Text T.Text
-normal = DM.fromList
+normal :: MapStrict.Map Text.Text Text.Text
+normal = MapStrict.fromList
   [ ("background", "background")
   , ("foreground", "foreground")
   , ("black"     , "color0")
@@ -79,8 +82,8 @@ normal = DM.fromList
   , ("white"     , "color7")
   ]
 
-bright :: DM.Map T.Text T.Text
-bright = DM.fromList
+bright :: MapStrict.Map Text.Text Text.Text
+bright = MapStrict.fromList
   [ ("background", "background")
   , ("foreground", "foreground")
   , ("black"     , "color8")
@@ -107,22 +110,24 @@ modeP =
 -- | colorP parses the name of a color (e.g., black)
 colorP :: Parser Alacritty
 colorP =
-  ColorName . T.pack <$> (spaces *> choice (string <$> colorNames) <* char ':')
+  ColorName
+    .   Text.pack
+    <$> (spaces *> choice (string <$> colorNames) <* char ':')
 
 -- | lineTillColorP parses all characters until the start of the color value.
 -- This way we can keep user specific indentation when replacing the color
 -- value.
-lineTillColorP :: Parser T.Text
+lineTillColorP :: Parser Text.Text
 lineTillColorP =
   mkOut <$> many space <*> choice (string <$> colorNames) <*> manyTill
     (choice [letter, char ':', space])
     (try (string "'0x"))
  where
   mkOut leading colorName filler =
-    let leading'   = T.pack leading
-        colorName' = T.pack colorName
-        filler'    = T.pack filler
-    in  T.empty <> leading' <> colorName' <> filler'
+    let leading'   = Text.pack leading
+        colorName' = Text.pack colorName
+        filler'    = Text.pack filler
+    in  Text.empty <> leading' <> colorName' <> filler'
 
 -- | getVal returns a new color value if one exists in the current theme. Needs
 -- to take the current color block (= mode) into account, so the correct map is
@@ -134,8 +139,8 @@ getVal t m n =
         Normal -> normal
       colors' = colors t
   in  do
-        value <- DM.lookup n map'
-        DM.lookup value colors'
+        value <- MapStrict.lookup n map'
+        MapStrict.lookup value colors'
 
 -- | mkLine creates a new line with which we can replace the old line in the
 -- config file
@@ -146,7 +151,8 @@ mkLine l c = case parseText lineTillColorP l of
     (HexColor (r, g, b)) = rgbaToHexColor c
     newVal               = "'0x" <> r <> g <> b <> "'"
   (Failure errInfo) ->
-    Left $ "Failed to parse leading part of old line: " <> T.pack (show errInfo)
+    Left $ "Failed to parse leading part of old line: " <> Text.pack
+      (show errInfo)
 
-unlines' :: Vec.Vector T.Text -> T.Text
-unlines' = Vec.foldl T.append T.empty . fmap (<> "\n")
+unlines' :: Vector.Vector Text.Text -> Text.Text
+unlines' = Vector.foldl Text.append Text.empty . fmap (<> "\n")

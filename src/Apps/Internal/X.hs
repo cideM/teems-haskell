@@ -3,16 +3,16 @@
 module Apps.Internal.X where
 
 import           Types
-import           Data.Text                     as T
+import qualified Data.Text                     as Text
 import           Text.Trifecta
-import           Util.Internal
 import           Parser.Internal
 import           Apps.Internal.ConfigCreator
-import           Data.Semigroup
+import qualified Data.Ord                      as Ord
+import           Data.Semigroup                 ( (<>) )
 import           Text.Parser.LookAhead
-import           Data.List                      ( sortBy )
+import qualified Data.List                     as List
 
-type NameClassPrefix = T.Text
+type NameClassPrefix = Text.Text
 
 x :: App
 x = App
@@ -20,12 +20,15 @@ x = App
   (configCreator' (xLineP allowedPrefixes) (makeNewLine allowedPrefixes))
   [".Xresources"]
 
-allowedPrefixes :: [T.Text]
+allowedPrefixes :: [Text.Text]
 allowedPrefixes = ["*."]
 
 resourceP :: Parser ColorName
 resourceP = choice
-  [T.pack <$> string "foreground", T.pack <$> string "background", colorNP]
+  [ Text.pack <$> string "foreground"
+  , Text.pack <$> string "background"
+  , colorNP
+  ]
 
 -- Xresources syntax boils down to key: value.
 -- key is a "name.class.resource" and value can probably be almost anything
@@ -35,14 +38,16 @@ nameClassP
   -- ^^^ List of prefixes to add to e.g. "color1" or "foreground"
   -- Given ["*", "foo."] the parser will look for "*color5" and "foo.color5"
   -- Prefixes are sorted by descending length.
-  -> Parser T.Text
-nameClassP prefixes = T.pack <$> choice ps <* lookAhead resourceP
-  where ps = string <$> sortBy lengthDesc (fmap T.unpack prefixes)
+  -> Parser Text.Text
+nameClassP prefixes = Text.pack <$> choice ps <* lookAhead resourceP
+ where
+  ps = string <$> List.sortBy (Ord.comparing $ Ord.Down . List.length)
+                              (fmap Text.unpack prefixes)
 
-xLineP :: [NameClassPrefix] -> Parser T.Text
+xLineP :: [NameClassPrefix] -> Parser Text.Text
 xLineP allowed = spaces *> nameClassP allowed *> resourceP
 
-lineWithoutColorP :: [NameClassPrefix] -> Parser T.Text
+lineWithoutColorP :: [NameClassPrefix] -> Parser Text.Text
 lineWithoutColorP allowed =
   buildOutput
     <$> many space
@@ -52,13 +57,14 @@ lineWithoutColorP allowed =
     <*  manyTill anyChar eof
  where
   buildOutput leading nc res filler =
-    let leading' = T.pack leading
-        filler'  = T.pack filler
-    in  T.empty <> leading' <> nc <> res <> filler'
+    let leading' = Text.pack leading
+        filler'  = Text.pack filler
+    in  Text.empty <> leading' <> nc <> res <> filler'
 
-makeNewLine :: [NameClassPrefix] -> OldLine -> RGBA -> Either T.Text NewLine
+makeNewLine :: [NameClassPrefix] -> OldLine -> RGBA -> Either Text.Text NewLine
 makeNewLine allowed l color = case parseText (lineWithoutColorP allowed) l of
   (Success leading) -> Right $ leading <> hexAsText
     where hexAsText = displayHexColor $ rgbaToHexColor color
   (Failure errInfo) ->
-    Left $ "Failed to parse leading part of old line: " <> T.pack (show errInfo)
+    Left $ "Failed to parse leading part of old line: " <> Text.pack
+      (show errInfo)

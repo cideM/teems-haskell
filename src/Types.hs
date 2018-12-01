@@ -7,15 +7,15 @@ module Types where
 import           Data.Aeson
 import           Data.Semigroup
 import           Numeric
-import           Data.Text                     as T
+import qualified Data.Text                     as Text
 import           GHC.Generics
 import           Control.Exception.Safe
 import           Data.Map.Strict               as Map
 
-type ErrMsg = T.Text
+type ErrMsg = Text.Text
 
 data AppException
-  = ThemeDecodeException T.Text -- ^ When failing to decode with aeson
+  = ThemeDecodeException Text.Text -- ^ When failing to decode with aeson
   | ThemeNotFoundException -- ^ When theme is not found in config file passed via args
   | TransformException ErrMsg FilePath -- ^ When failing in the transforms function of a particular app (e.g., Apps.Alacritty configCreator)
   deriving (Show)
@@ -40,9 +40,9 @@ newtype Commands = Commands Command
 
 data App = App
     { -- | Name of the terminal emulator (e.g., alacritty)
-      _appName :: T.Text
+      _appName :: Text.Text
       -- | A function that returns a an error message or a new config
-    , _configCreator :: Theme -> T.Text -> Either ErrMsg T.Text
+    , _configCreator :: Theme -> Text.Text -> Either ErrMsg Text.Text
       -- | Paths where the config file can be found. The string is latter
       -- traversed with a function from System.Directory, hence no IO here.
       -- Existence of config files is checked later on.
@@ -52,11 +52,11 @@ data App = App
 instance Show App where
     show = show . _appName
 
-type ColorName = T.Text
+type ColorName = Text.Text
 
-type ThemeName = T.Text
+type ThemeName = Text.Text
 
-type Config = T.Text
+type Config = Text.Text
 
 data Theme = Theme
     {
@@ -71,20 +71,21 @@ data Theme = Theme
 instance FromJSON Theme
 instance ToJSON Theme
 
-newtype HexColor = HexColor (T.Text, T.Text, T.Text) deriving (Eq, Generic)
+newtype HexColor = HexColor (Text.Text, Text.Text, Text.Text) deriving (Eq, Generic)
 
-displayHexColor :: HexColor -> T.Text
+displayHexColor :: HexColor -> Text.Text
 displayHexColor (HexColor (r, g, b)) = "#" <> r <> g <> b
 
 instance Show HexColor where
-  show = show . T.unpack . displayHexColor
+  show = show . Text.unpack . displayHexColor
 
 rgbaToHexColor :: RGBA -> HexColor
 rgbaToHexColor (RGBA (r, g, b, _)) = HexColor
   (showHex' r, showHex' g, showHex' b)
  where
   showHex' x =
-    let s = T.pack $ showHex x "" in if T.length s == 1 then "0" <> s else s
+    let s = Text.pack $ showHex x ""
+    in  if Text.length s == 1 then "0" <> s else s
 
 newtype RGBA = RGBA (Int, Int, Int, Double) deriving (Show, Eq, Generic)
 

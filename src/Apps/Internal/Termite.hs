@@ -3,7 +3,7 @@
 module Apps.Internal.Termite where
 
 import           Types
-import           Data.Text                     as T
+import qualified Data.Text                     as Text
 import           Text.Trifecta
 import           Data.Semigroup
 import           Parser.Internal
@@ -18,29 +18,29 @@ termite = App "termite" (configCreator' lineP mkLine) ["termite/config"]
      where
       rgbaText =
         "rgba("
-          <> (T.pack . show $ r)
+          <> (Text.pack . show $ r)
           <> ", "
-          <> (T.pack . show $ g)
+          <> (Text.pack . show $ g)
           <> ", "
-          <> (T.pack . show $ b)
+          <> (Text.pack . show $ b)
           <> ", "
-          <> (T.pack . show $ a)
+          <> (Text.pack . show $ a)
           <> ")"
     (Failure errInfo) ->
-      Left $ "Failed to parse leading part of old line: " <> T.pack
+      Left $ "Failed to parse leading part of old line: " <> Text.pack
         (show errInfo)
 
 -- Excluding colorN (color0, color100,...)
-termiteColorP :: Parser T.Text
-termiteColorP = T.pack <$> choice
+termiteColorP :: Parser Text.Text
+termiteColorP = Text.pack <$> choice
   (fmap
     string
     ["foreground", "foreground_bold", "foreground_dim", "background", "cursor"]
   )
 
-lineP :: Parser T.Text
+lineP :: Parser Text.Text
 lineP =
   spaces *> choice [colorNP, termiteColorP] <* (some space <|> string "=")
 
-lineTillColorP :: Parser T.Text
-lineTillColorP = T.pack <$> manyTill anyChar (skipSome (char '#') <|> eof)
+lineTillColorP :: Parser Text.Text
+lineTillColorP = Text.pack <$> manyTill anyChar (skipSome (char '#') <|> eof)
