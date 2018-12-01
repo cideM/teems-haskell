@@ -4,7 +4,7 @@ module Apps.Internal.XTerm where
 
 import           Apps.Internal.ConfigCreator
 import           Types
-import qualified Data.Text                     as Text
+import Data.Text                     as Text
 import           Apps.Internal.X               as XResources
                                          hiding ( allowedPrefixes )
 
@@ -16,5 +16,5 @@ xTerm = App
   )
   [".Xresources"]
 
-allowedPrefixes :: [Text.Text]
+allowedPrefixes :: [Text]
 allowedPrefixes = ["XTerm*"]

@@ -7,15 +7,15 @@ module Types where
 import           Data.Aeson
 import           Data.Semigroup
 import           Numeric
-import qualified Data.Text                     as Text
+import Data.Text                     as Text
 import           GHC.Generics
 import           Control.Exception.Safe
 import           Data.Map.Strict               as Map
 
-type ErrMsg = Text.Text
+type ErrMsg = Text
 
 data AppException
-  = ThemeDecodeException Text.Text -- ^ When failing to decode with aeson
+  = ThemeDecodeException Text -- ^ When failing to decode with aeson
   | ThemeNotFoundException -- ^ When theme is not found in config file passed via args
   | TransformException ErrMsg FilePath -- ^ When failing in the transforms function of a particular app (e.g., Apps.Alacritty configCreator)
   deriving (Show)
@@ -40,9 +40,9 @@ newtype Commands = Commands Command
 
 data App = App
     { -- | Name of the terminal emulator (e.g., alacritty)
-      _appName :: Text.Text
+      _appName :: Text
       -- | A function that returns a an error message or a new config
-    , _configCreator :: Theme -> Text.Text -> Either ErrMsg Text.Text
+    , _configCreator :: Theme -> Text -> Either ErrMsg Text
       -- | Paths where the config file can be found. The string is latter
       -- traversed with a function from System.Directory, hence no IO here.
       -- Existence of config files is checked later on.
@@ -52,11 +52,11 @@ data App = App
 instance Show App where
     show = show . _appName
 
-type ColorName = Text.Text
+type ColorName = Text
 
-type ThemeName = Text.Text
+type ThemeName = Text
 
-type Config = Text.Text
+type Config = Text
 
 data Theme = Theme
     {
@@ -71,9 +71,9 @@ data Theme = Theme
 instance FromJSON Theme
 instance ToJSON Theme
 
-data HexColor = HexColor !Text.Text !Text.Text !Text.Text deriving (Eq, Generic)
+data HexColor = HexColor !Text !Text !Text deriving (Eq, Generic)
 
-displayHexColor :: HexColor -> Text.Text
+displayHexColor :: HexColor -> Text
 displayHexColor (HexColor r g b) = "#" <> r <> g <> b
 
 instance Show HexColor where

@@ -3,7 +3,7 @@
 module Apps.Internal.X where
 
 import           Types
-import qualified Data.Text                     as Text
+import Data.Text                     as Text
 import           Text.Trifecta
 import           Parser.Internal
 import           Apps.Internal.ConfigCreator
@@ -12,7 +12,7 @@ import           Data.Semigroup                 ( (<>) )
 import           Text.Parser.LookAhead
 import qualified Data.List                     as List
 
-type NameClassPrefix = Text.Text
+type NameClassPrefix = Text
 
 x :: App
 x = App
@@ -20,7 +20,7 @@ x = App
   (configCreator' (xLineP allowedPrefixes) (makeNewLine allowedPrefixes))
   [".Xresources"]
 
-allowedPrefixes :: [Text.Text]
+allowedPrefixes :: [Text]
 allowedPrefixes = ["*."]
 
 resourceP :: Parser ColorName
@@ -38,16 +38,16 @@ nameClassP
   -- ^^^ List of prefixes to add to e.g. "color1" or "foreground"
   -- Given ["*", "foo."] the parser will look for "*color5" and "foo.color5"
   -- Prefixes are sorted by descending length.
-  -> Parser Text.Text
+  -> Parser Text
 nameClassP prefixes = Text.pack <$> choice ps <* lookAhead resourceP
  where
   ps = string <$> List.sortBy (Ord.comparing $ Ord.Down . List.length)
                               (fmap Text.unpack prefixes)
 
-xLineP :: [NameClassPrefix] -> Parser Text.Text
+xLineP :: [NameClassPrefix] -> Parser Text
 xLineP allowed = spaces *> nameClassP allowed *> resourceP
 
-lineWithoutColorP :: [NameClassPrefix] -> Parser Text.Text
+lineWithoutColorP :: [NameClassPrefix] -> Parser Text
 lineWithoutColorP allowed =
   buildOutput
     <$> many space
@@ -61,7 +61,7 @@ lineWithoutColorP allowed =
         filler'  = Text.pack filler
     in  Text.empty <> leading' <> nc <> res <> filler'
 
-makeNewLine :: [NameClassPrefix] -> OldLine -> RGBA -> Either Text.Text NewLine
+makeNewLine :: [NameClassPrefix] -> OldLine -> RGBA -> Either Text NewLine
 makeNewLine allowed l color = case parseText (lineWithoutColorP allowed) l of
   (Success leading) -> Right $ leading <> hexAsText
     where hexAsText = displayHexColor $ rgbaToHexColor color

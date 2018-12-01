@@ -7,9 +7,9 @@ where
 
 import           Types
 import           Data.Semigroup
-import qualified Data.Text                     as Text
+import Data.Text                     as Text
 
 -- | missingColor just appends some texts to create an error message
-missingColor :: ColorName -> ThemeName -> Text.Text
+missingColor :: ColorName -> ThemeName -> Text
 missingColor cName tName =
   "Could not find color " <> cName <> " in theme " <> tName

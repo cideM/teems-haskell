@@ -5,7 +5,7 @@ module Apps.Internal.Alacritty where
 import           Types
 import           Util.Internal
 import           Data.Functor
-import qualified Data.Text                     as Text
+import Data.Text                     as Text
 import qualified Data.Map.Strict               as MapStrict
 import           Parser.Internal
 import           Text.Trifecta           hiding ( line )
@@ -23,7 +23,7 @@ data AlacrittyMode = Normal | Bright deriving (Show, Eq)
 
 -- | Alacritty is the parse result of a line in the Alacritty config.
 -- It can either be a color name (e.g., black), or a mode (see above)
-data Alacritty = ColorName Text.Text | Mode AlacrittyMode deriving (Show, Eq)
+data Alacritty = ColorName Text | Mode AlacrittyMode deriving (Show, Eq)
 
 alacritty :: App
 alacritty = App "alacritty" configCreator' ["alacritty/alacritty.yml"]
@@ -68,7 +68,7 @@ colorNames =
 -- the actual color names from the theme, depending on the color block (= mode)
 -- we're in
 
-normal :: MapStrict.Map Text.Text Text.Text
+normal :: MapStrict.Map Text Text
 normal = MapStrict.fromList
   [ ("background", "background")
   , ("foreground", "foreground")
@@ -82,7 +82,7 @@ normal = MapStrict.fromList
   , ("white"     , "color7")
   ]
 
-bright :: MapStrict.Map Text.Text Text.Text
+bright :: MapStrict.Map Text Text
 bright = MapStrict.fromList
   [ ("background", "background")
   , ("foreground", "foreground")
@@ -117,7 +117,7 @@ colorP =
 -- | lineTillColorP parses all characters until the start of the color value.
 -- This way we can keep user specific indentation when replacing the color
 -- value.
-lineTillColorP :: Parser Text.Text
+lineTillColorP :: Parser Text
 lineTillColorP =
   mkOut <$> many space <*> choice (string <$> colorNames) <*> manyTill
     (choice [letter, char ':', space])
@@ -154,5 +154,5 @@ mkLine l c = case parseText lineTillColorP l of
     Left $ "Failed to parse leading part of old line: " <> Text.pack
       (show errInfo)
 
-unlines' :: Vector.Vector Text.Text -> Text.Text
+unlines' :: Vector.Vector Text -> Text
 unlines' = Vector.foldl Text.append Text.empty . fmap (<> "\n")

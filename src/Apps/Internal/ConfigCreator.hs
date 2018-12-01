@@ -1,16 +1,16 @@
 module Apps.Internal.ConfigCreator where
 
 import           Types
-import qualified Data.Text                     as Text
+import Data.Text                     as Text
 import qualified Data.Map                      as Map
 import           Text.Trifecta
 import           Parser.Internal
 import           Util.Internal
 
-type LineParser = Parser Text.Text
+type LineParser = Parser Text
 
-type OldLine = Text.Text
-type NewLine = Text.Text
+type OldLine = Text
+type NewLine = Text
 
 -- | configCreator' contains code shared by several apps. It transforms a config
 -- with the colors from the given theme and returns either the new config or an

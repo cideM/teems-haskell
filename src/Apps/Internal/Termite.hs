@@ -3,7 +3,7 @@
 module Apps.Internal.Termite where
 
 import           Types
-import qualified Data.Text                     as Text
+import Data.Text                     as Text
 import           Text.Trifecta
 import           Data.Semigroup
 import           Parser.Internal
@@ -31,16 +31,16 @@ termite = App "termite" (configCreator' lineP mkLine) ["termite/config"]
         (show errInfo)
 
 -- Excluding colorN (color0, color100,...)
-termiteColorP :: Parser Text.Text
+termiteColorP :: Parser Text
 termiteColorP = Text.pack <$> choice
   (fmap
     string
     ["foreground", "foreground_bold", "foreground_dim", "background", "cursor"]
   )
 
-lineP :: Parser Text.Text
+lineP :: Parser Text
 lineP =
   spaces *> choice [colorNP, termiteColorP] <* (some space <|> string "=")
 
-lineTillColorP :: Parser Text.Text
+lineTillColorP :: Parser Text
 lineTillColorP = Text.pack <$> manyTill anyChar (skipSome (char '#') <|> eof)

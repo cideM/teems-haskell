@@ -4,7 +4,7 @@ module Apps.Internal.Kitty where
 
 import           Types
 import           Data.Semigroup
-import qualified Data.Text                     as Text
+import Data.Text                     as Text
 import           Text.Trifecta
 import           Parser.Internal
 import           Control.Applicative
@@ -23,12 +23,12 @@ kitty = App "kitty" (configCreator' lineP mkLine) ["kitty/kitty.config"]
         (show errInfo)
 
 -- Excluding colorN (color0, color100,...)
-kittyColorP :: Parser Text.Text
+kittyColorP :: Parser Text
 kittyColorP = Text.pack <$> choice
   (fmap
     string
     ["foreground", "selection_foreground", "selection_background", "background"]
   )
 
-lineTillColorP :: Parser Text.Text
+lineTillColorP :: Parser Text
 lineTillColorP = Text.pack <$> manyTill anyChar (skipSome (char '#') <|> eof)
