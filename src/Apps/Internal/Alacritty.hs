@@ -148,7 +148,7 @@ mkLine :: OldLine -> RGBA -> Either ErrMsg NewLine
 mkLine l c = case parseText lineTillColorP l of
   (Success leading) -> Right $ leading <> newVal
    where
-    (HexColor (r, g, b)) = rgbaToHexColor c
+    (HexColor r g b) = rgbaToHexColor c
     newVal               = "'0x" <> r <> g <> b <> "'"
   (Failure errInfo) ->
     Left $ "Failed to parse leading part of old line: " <> Text.pack

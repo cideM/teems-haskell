@@ -71,23 +71,22 @@ data Theme = Theme
 instance FromJSON Theme
 instance ToJSON Theme
 
-newtype HexColor = HexColor (Text.Text, Text.Text, Text.Text) deriving (Eq, Generic)
+data HexColor = HexColor !Text.Text !Text.Text !Text.Text deriving (Eq, Generic)
 
 displayHexColor :: HexColor -> Text.Text
-displayHexColor (HexColor (r, g, b)) = "#" <> r <> g <> b
+displayHexColor (HexColor r g b) = "#" <> r <> g <> b
 
 instance Show HexColor where
   show = show . Text.unpack . displayHexColor
 
 rgbaToHexColor :: RGBA -> HexColor
-rgbaToHexColor (RGBA (r, g, b, _)) = HexColor
-  (showHex' r, showHex' g, showHex' b)
+rgbaToHexColor (RGBA r g b _) = HexColor (showHex' r) (showHex' g) (showHex' b)
  where
   showHex' x =
     let s = Text.pack $ showHex x ""
     in  if Text.length s == 1 then "0" <> s else s
 
-newtype RGBA = RGBA (Int, Int, Int, Double) deriving (Show, Eq, Generic)
+data RGBA = RGBA !Int !Int !Int !Double deriving (Show, Eq, Generic)
 
 instance FromJSON RGBA
 instance ToJSON RGBA

@@ -13,7 +13,7 @@ import           Apps.Internal.ConfigCreator
 termite :: App
 termite = App "termite" (configCreator' lineP mkLine) ["termite/config"]
  where
-  mkLine l (RGBA (r, g, b, a)) = case parseText lineTillColorP l of
+  mkLine l (RGBA r g b a) = case parseText lineTillColorP l of
     (Success leading) -> Right $ leading <> rgbaText
      where
       rgbaText =
