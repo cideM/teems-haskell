@@ -1,8 +1,8 @@
 module Parser.Internal where
 
-import Data.Text                     as Text
 import           Data.Semigroup
-import           Text.Trifecta                 as Trifecta
+import           Data.Text      as Text
+import           Text.Trifecta  as Trifecta
 
 -- | parseText is a convenience wrapper around parseString
 parseText :: Parser a -> Text -> Trifecta.Result a
