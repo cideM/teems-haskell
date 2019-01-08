@@ -66,6 +66,7 @@ colorNames =
   , "foreground"
   ]
 
+-- TODO: This should be a single MapStrict.Map (Text, Mode) Text, not two maps.
 -- He're I am mapping the non-unique color names from Alacritty's config file to
 -- the actual color names from the theme, depending on the color block (= mode)
 -- we're in
@@ -121,6 +122,10 @@ lineTillColorP =
   mkOut <$> many space <*> choice (string <$> colorNames) <*>
   manyTill
     (choice [letter, char ':', space])
+    -- | Starting to veer into "half baked YAML parser territory". The alacritty
+    -- config is a .yaml file. Might have been better to just use an existing
+    -- library for this. But I have too many other projects right now.
+    -- yaml can have single and double quotes.
     (try ((string "\'" <|> string "\"") *> string "0x"))
   where
     mkOut leading colorName filler =
