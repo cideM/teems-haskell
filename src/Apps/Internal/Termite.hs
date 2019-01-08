@@ -7,7 +7,6 @@ import           Control.Applicative
 import           Data.Semigroup
 import           Data.Text                   as Text
 import           Parser.Internal
-import           Text.Parser.LookAhead
 import           Text.Trifecta
 import           Types
 
@@ -30,7 +29,7 @@ termite = App "termite" (configCreator' lineP mkLine) ["termite/config"]
           "Failed to parse leading part of old line: " <>
           Text.pack (show errInfo)
 
--- Excluding colorN (color0, color100,...)
+-- | Parses termite specific color values
 termiteColorP :: Parser Text
 termiteColorP =
   Text.pack <$>

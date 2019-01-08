@@ -17,5 +17,6 @@ xTerm =
        (XResources.makeNewLine allowedPrefixes))
     [".Xresources"]
 
+-- | See documentation for X in X.hs
 allowedPrefixes :: [Text]
 allowedPrefixes = ["XTerm*"]

@@ -67,9 +67,8 @@ colorNames =
   ]
 
 -- TODO: This should be a single MapStrict.Map (Text, Mode) Text, not two maps.
--- He're I am mapping the non-unique color names from Alacritty's config file to
--- the actual color names from the theme, depending on the color block (= mode)
--- we're in
+-- | Map from non-unique color names from Alacritty's config file to the actual
+-- color names from the theme, depending on the color block (= mode) we're in
 normal :: MapStrict.Map Text Text
 normal =
   MapStrict.fromList
@@ -85,6 +84,7 @@ normal =
     , ("white", "color7")
     ]
 
+-- | Same as normal but for bright mode colors
 bright :: MapStrict.Map Text Text
 bright =
   MapStrict.fromList
@@ -116,16 +116,16 @@ colorP =
 
 -- | lineTillColorP parses all characters until the start of the color value.
 -- This way we can keep user specific indentation when replacing the color
--- value.
+-- value. The alacritty config is a .yaml file. Might have been better to just
+-- use an existing library for this. But I have too many other projects right
+-- now.
 lineTillColorP :: Parser Text
 lineTillColorP =
   mkOut <$> many space <*> choice (string <$> colorNames) <*>
   manyTill
     (choice [letter, char ':', space])
-    -- | Starting to veer into "half baked YAML parser territory". The alacritty
-    -- config is a .yaml file. Might have been better to just use an existing
-    -- library for this. But I have too many other projects right now.
-    -- yaml can have single and double quotes.
+    -- Starting to veer into "half baked YAML parser territory". yaml can have
+    -- single and double quotes.
     (try ((string "\'" <|> string "\"") *> string "0x"))
   where
     mkOut leading colorName filler =

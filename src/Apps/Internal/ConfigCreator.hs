@@ -7,6 +7,8 @@ import           Text.Trifecta
 import           Types
 import           Util.Internal
 
+-- | LineParser is a function that should successfully parse a line that the app
+-- can transform
 type LineParser = Parser Text
 
 type OldLine = Text
@@ -17,11 +19,9 @@ type NewLine = Text
 -- with the colors from the given theme and returns either the new config or an
 -- error message. It goes over the old config line by line. If a line matches
 -- the LineParser, that line (with some other stuff, see below) is given to the
--- line transform function.
---
--- This isn't tested as it only makes sense in the context of those functions.
--- That's probably a very bad practice but whatever. It's tested in
--- KittySpec.hs, XSpec.hs etc.
+-- line transform function. This isn't tested as it only makes sense in the
+-- context of those functions. That's probably a very bad practice but whatever.
+-- It's tested in KittySpec.hs, XSpec.hs etc.
 configCreator' ::
      LineParser
   -- ^^^ Checks if a line has a valid color name and returns it for lookup of a new value.
