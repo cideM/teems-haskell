@@ -31,7 +31,7 @@ data HexColor =
   deriving (Eq, Generic)
 
 instance Show HexColor where
-  show (HexColor r g b) = show . Text.unpack $ "#" <> r <> g <> b
+  show (HexColor r g b) = Text.unpack $ "#" <> r <> g <> b
 
 -- | R G B Alpha channel
 data RGBA =
