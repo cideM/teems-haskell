@@ -5,7 +5,7 @@ module TermiteSpec where
 import           Apps.Internal.Termite
 import           Test.Hspec
 import           TestUtils
-import           Types
+import           Types.Internal.Misc
 
 spec :: Spec
 spec = do

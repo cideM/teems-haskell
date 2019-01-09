@@ -5,9 +5,9 @@ module TypesSpec where
 import           Data.Aeson
 import           Data.Map.Strict       as Map
 import           Test.Hspec
-import           Types
 import           Types.Internal.Colors (HexColor (..), RGBA (..))
 import qualified Types.Internal.Colors as Colors
+import           Types.Internal.Misc
 
 spec :: Spec
 spec = do

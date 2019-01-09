@@ -16,7 +16,37 @@ import           Data.Text              as Text
 import           Data.Text.IO           as TextIO
 import           Options.Applicative
 import           System.Directory
-import           Types
+import           Types.Internal.Misc
+
+-- | Umbrella data type for all possible exceptions reported to users
+data AppException
+  = ThemeDecodeException Text -- ^ When failing to decode with aeson
+  | ThemeNotFoundException -- ^ When theme is not found in config file passed via args
+  | TransformException ErrMsg
+                       FilePath -- ^ Error during transformation of a config
+  deriving (Show)
+
+instance Exception AppException
+
+newtype Commands =
+  Commands Command
+
+-- | The following types are modelled as outlined in the documentation for
+-- optparse-applicative
+newtype ListThemesOptions = ListThemesOptions
+  { _configPath :: FilePath -- ^ Path to configuration file
+  }
+
+data ActivateOptions = ActivateOptions
+  { _configPath :: FilePath -- ^ Path to configuration file
+  , _themeName  :: ThemeName -- ^ Name of theme to activate
+  }
+
+-- | Available CLI commands of this app
+data Command
+  = ListThemes ListThemesOptions
+  | Activate ActivateOptions
+  | ListApps
 
 getConfigPath :: FilePath -> IO FilePath
 getConfigPath = getXdgDirectory XdgConfig

@@ -4,8 +4,8 @@ import qualified Data.Map              as Map
 import           Data.Text             as Text
 import           Parser.Internal
 import           Text.Trifecta
-import           Types
 import           Types.Internal.Colors (RGBA)
+import           Types.Internal.Misc
 import           Util.Internal
 
 -- | LineParser is a function that should successfully parse a line that the app

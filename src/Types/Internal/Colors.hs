@@ -67,6 +67,7 @@ isScientific :: Value -> Bool
 isScientific (Number _) = True
 isScientific _          = False
 
+-- | Parse a JSON list into an RGBA color
 parseFromRGBA :: Value -> Parser RGBA
 parseFromRGBA =
   Aeson.withArray "Failed to parse list of RGBA values" $ \values -> do
@@ -77,6 +78,7 @@ parseFromRGBA =
     toInt = Maybe.fromJust . Scientific.toBoundedInteger
     toFloat = Scientific.toRealFloat
 
+-- | Parse a JSON string into an RGBA color
 parseFromHex :: Value -> Parser RGBA
 parseFromHex =
   Aeson.withText "Failed to parse Hex color string" $ \text ->

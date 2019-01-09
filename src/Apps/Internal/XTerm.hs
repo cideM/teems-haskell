@@ -6,7 +6,7 @@ import           Apps.Internal.ConfigCreator
 import           Apps.Internal.X             as XResources hiding
                                                             (allowedPrefixes)
 import           Data.Text                   as Text
-import           Types
+import           Types.Internal.Misc
 
 xTerm :: App
 xTerm =

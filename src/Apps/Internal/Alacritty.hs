@@ -12,9 +12,9 @@ import           Data.Text                   as Text
 import qualified Data.Vector                 as Vector
 import           Parser.Internal
 import           Text.Trifecta               hiding (line)
-import           Types
 import           Types.Internal.Colors       (HexColor (..), RGBA (..))
 import qualified Types.Internal.Colors       as Colors
+import           Types.Internal.Misc
 import           Util.Internal
 
 -- | AlacrittyMode exists because Alacritty's config has two color blocks, one

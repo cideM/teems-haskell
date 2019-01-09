@@ -8,8 +8,8 @@ import           Data.Semigroup
 import           Data.Text                   as Text
 import           Parser.Internal
 import           Text.Trifecta
-import           Types
 import           Types.Internal.Colors       (RGBA (..))
+import           Types.Internal.Misc
 
 termite :: App
 termite = App "termite" (configCreator' lineP mkLine) ["termite/config"]

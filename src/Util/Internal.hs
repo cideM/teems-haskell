@@ -5,8 +5,8 @@ module Util.Internal
   ) where
 
 import           Data.Semigroup
-import           Data.Text      as Text
-import           Types
+import           Data.Text           as Text
+import           Types.Internal.Misc
 
 -- | missingColor just appends some texts to create an error message
 missingColor :: ColorName -> ThemeName -> Text

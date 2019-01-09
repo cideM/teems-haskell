@@ -8,8 +8,8 @@ import           Data.Semigroup
 import           Data.Text                   as Text
 import           Parser.Internal
 import           Text.Trifecta
-import           Types
 import qualified Types.Internal.Colors       as Colors
+import           Types.Internal.Misc
 
 kitty :: App
 kitty = App "kitty" (configCreator' lineP mkLine) ["kitty/kitty.config"]

@@ -10,9 +10,9 @@ import           Data.Text                   as Text
 import           Parser.Internal
 import           Text.Parser.LookAhead
 import           Text.Trifecta
-import           Types
 import           Types.Internal.Colors       (RGBA (..))
 import qualified Types.Internal.Colors       as Colors
+import           Types.Internal.Misc
 
 -- | Xresources configuration files consist of name class resource declarations.
 -- name.Class.resource: value
