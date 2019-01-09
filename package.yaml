@@ -39,7 +39,7 @@ library:
     - -Wall
 
 executables:
-  aoc2018-exe:
+  teemsh:
     main: Main.hs
     source-dirs: app
     ghc-options:
@@ -54,7 +54,7 @@ executables:
       - Glob
 
 tests:
-  aoc2018-test:
+  teems-haskell-test:
     main: Spec.hs
     source-dirs: test
     ghc-options:

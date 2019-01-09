@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 62bbd189a70d401328a5d3db5918b29bf7186debff701c753cb8b720f45f759e
+-- hash: 86d265f4c268f0fa36613ebdd06eceeffb3a4b001a5c0437cfc8ede907739eea
 
 name:           teems-haskell
 version:        0.1.0.0
@@ -57,7 +57,7 @@ library
     , vector
   default-language: Haskell2010
 
-executable aoc2018-exe
+executable teemsh
   main-is: Main.hs
   other-modules:
       Paths_teems_haskell
@@ -81,7 +81,7 @@ executable aoc2018-exe
     , vector
   default-language: Haskell2010
 
-test-suite aoc2018-test
+test-suite teems-haskell-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
