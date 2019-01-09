@@ -1,86 +1,113 @@
-name:                teems-haskell
-version:             0.1.0.0
--- synopsis:
--- description:
-homepage:            https://github.com/githubuser/teems-haskell#readme
-license:             BSD3
-license-file:        LICENSE
-author:              Florian Beeres
-maintainer:          yuuki@protonmail.com
-copyright:           2018 Florian Beeres
-category:            CLI
-build-type:          Simple
-cabal-version:       >=1.10
-extra-source-files:  README.md
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.1.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 62bbd189a70d401328a5d3db5918b29bf7186debff701c753cb8b720f45f759e
+
+name:           teems-haskell
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/cideM/teems-haskell#readme>
+homepage:       https://github.com/cideM/teems-haskell#readme
+bug-reports:    https://github.com/cideM/teems-haskell/issues
+author:         Florian Beeres
+maintainer:     yuuki@protonmail.com
+copyright:      GNU
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/cideM/teems-haskell
 
 library
   exposed-modules:
-    Apps.Apps
-    , Types
-    , Apps.Internal.Alacritty
-    , Apps.Internal.ConfigCreator
-    , Apps.Internal.X
-    , Apps.Internal.XTerm
-    , Apps.Internal.Termite
-    , Apps.Internal.Kitty
-    , Util.Internal
+      Apps.Apps
+      Apps.Internal.Alacritty
+      Apps.Internal.ConfigCreator
+      Apps.Internal.Kitty
+      Apps.Internal.Termite
+      Apps.Internal.X
+      Apps.Internal.XTerm
+      Parser.Internal
+      Types
+      Types.Internal.Colors
+      Util.Internal
   other-modules:
-    Parser.Internal
+      Paths_teems_haskell
   hs-source-dirs:
       src
+  ghc-options: -O2 -Wall
   build-depends:
-      base >=4.7 && <5
-    , trifecta
-    , directory
-    , aeson
+      aeson
+    , base >=4.7 && <5
+    , bytestring
     , containers
+    , directory
     , parsers
-    , text
     , safe-exceptions
-    , vector
     , scientific
+    , text
+    , trifecta
+    , vector
   default-language: Haskell2010
 
-executable teems-haskell
-  hs-source-dirs:      app
-  ghc-options:         -Wall -O2
-  main-is:             Main.hs
-  default-language:    Haskell2010
-  build-depends:       base >= 4.7 && < 5
-                     , Glob
-                     , text
-                     , directory
-                     , containers
-                     , aeson
-                     , bytestring
-                     , optparse-applicative
-                     , trifecta
-                     , parsers
-                     , safe-exceptions
-                     , scientific
-                     , teems-haskell
+executable aoc2018-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_teems_haskell
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -O2 -rtsopts -with-rtsopts=-N -Wall
+  build-depends:
+      Glob
+    , aeson
+    , base >=4.7 && <5
+    , bytestring
+    , containers
+    , directory
+    , optparse-applicative
+    , parsers
+    , safe-exceptions
+    , scientific
+    , teems-haskell
+    , text
+    , trifecta
+    , vector
+  default-language: Haskell2010
 
-
-test-suite teems-haskell-test
+test-suite aoc2018-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
+  other-modules:
+      AlacrittySpec
+      KittySpec
+      TermiteSpec
+      TestUtils
+      TypesSpec
+      XSpec
+      XTermSpec
+      Paths_teems_haskell
   hs-source-dirs:
       test
-  other-modules:
-    AlacrittySpec
-    , TypesSpec
-    , KittySpec
-    , TermiteSpec
-    , TestUtils
-    , XSpec
-    , XTermSpec
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
-    , teems-haskell
-    , hspec
-    , trifecta
-    , aeson
-    , parsers
+      aeson
+    , base >=4.7 && <5
+    , bytestring
     , containers
+    , directory
+    , hspec
+    , parsers
+    , safe-exceptions
+    , scientific
+    , teems-haskell
+    , text
+    , trifecta
+    , vector
   default-language: Haskell2010
