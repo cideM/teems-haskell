@@ -9,16 +9,17 @@ import           Data.Text                   as Text
 import           Parser.Internal
 import           Text.Trifecta
 import           Types
+import qualified Types.Internal.Colors       as Colors
 
 kitty :: App
 kitty = App "kitty" (configCreator' lineP mkLine) ["kitty/kitty.config"]
   where
     lineP =
       spaces *> choice [colorNP, kittyColorP] <* (some space <|> string "=")
-    mkLine l c =
+    mkLine l rgba =
       case parseText lineTillColorP l of
         (Success leading) -> Right $ leading <> hex
-          where hex = displayHexColor $ rgbaToHexColor c
+          where hex = Text.pack . show $ Colors.toHex rgba
         (Failure errInfo) ->
           Left $
           "Failed to parse leading part of old line: " <>

@@ -11,6 +11,8 @@ import           Parser.Internal
 import           Text.Parser.LookAhead
 import           Text.Trifecta
 import           Types
+import           Types.Internal.Colors       (RGBA (..))
+import qualified Types.Internal.Colors       as Colors
 
 type NameClassPrefix = Text
 
@@ -64,10 +66,10 @@ lineWithoutColorP allowed =
        in Text.empty <> leading' <> nc <> res <> filler'
 
 makeNewLine :: [NameClassPrefix] -> OldLine -> RGBA -> Either Text NewLine
-makeNewLine allowed l color =
+makeNewLine allowed l rgba =
   case parseText (lineWithoutColorP allowed) l of
     (Success leading) -> Right $ leading <> hexAsText
-      where hexAsText = displayHexColor $ rgbaToHexColor color
+      where hexAsText = Text.pack . show $ Colors.toHex rgba
     (Failure errInfo) ->
       Left $
       "Failed to parse leading part of old line: " <> Text.pack (show errInfo)

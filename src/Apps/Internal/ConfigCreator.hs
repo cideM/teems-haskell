@@ -1,10 +1,11 @@
 module Apps.Internal.ConfigCreator where
 
-import qualified Data.Map        as Map
-import           Data.Text       as Text
+import qualified Data.Map              as Map
+import           Data.Text             as Text
 import           Parser.Internal
 import           Text.Trifecta
 import           Types
+import           Types.Internal.Colors (RGBA)
 import           Util.Internal
 
 type LineParser = Parser Text

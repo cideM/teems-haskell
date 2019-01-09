@@ -7,9 +7,9 @@ import           Control.Applicative
 import           Data.Semigroup
 import           Data.Text                   as Text
 import           Parser.Internal
-import           Text.Parser.LookAhead
 import           Text.Trifecta
 import           Types
+import           Types.Internal.Colors       (RGBA (..))
 
 termite :: App
 termite = App "termite" (configCreator' lineP mkLine) ["termite/config"]

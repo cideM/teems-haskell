@@ -13,6 +13,8 @@ import qualified Data.Vector                 as Vector
 import           Parser.Internal
 import           Text.Trifecta               hiding (line)
 import           Types
+import           Types.Internal.Colors       (HexColor (..), RGBA (..))
+import qualified Types.Internal.Colors       as Colors
 import           Util.Internal
 
 -- | AlacrittyMode exists because Alacritty's config has two color blocks, one
@@ -145,10 +147,10 @@ getVal t m n =
 -- | mkLine creates a new line with which we can replace the old line in the
 -- config file
 mkLine :: OldLine -> RGBA -> Either ErrMsg NewLine
-mkLine l c =
+mkLine l rgba =
   case parseText lineTillColorP l of
     (Success leading) -> Right $ leading <> newVal
-      where (HexColor r g b) = rgbaToHexColor c
+      where (HexColor r g b) = Colors.toHex rgba
             newVal = "'0x" <> r <> g <> b <> "'"
     (Failure errInfo) ->
       Left $

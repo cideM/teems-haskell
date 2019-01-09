@@ -1,16 +1,14 @@
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedStrings     #-}
 
 module Types where
 
 import           Control.Exception.Safe
 import           Data.Aeson
 import           Data.Map.Strict        as Map
-import           Data.Semigroup
 import           Data.Text              as Text
 import           GHC.Generics
-import           Numeric
+import           Types.Internal.Colors  (RGBA)
 
 type ErrMsg = Text
 
@@ -72,37 +70,3 @@ data Theme = Theme
   } deriving (Generic, Show, Eq)
 
 instance FromJSON Theme
-
-instance ToJSON Theme
-
-data HexColor =
-  HexColor !Text
-           !Text
-           !Text
-  deriving (Eq, Generic)
-
-displayHexColor :: HexColor -> Text
-displayHexColor (HexColor r g b) = "#" <> r <> g <> b
-
-instance Show HexColor where
-  show = show . Text.unpack . displayHexColor
-
-rgbaToHexColor :: RGBA -> HexColor
-rgbaToHexColor (RGBA r g b _) = HexColor (showHex' r) (showHex' g) (showHex' b)
-  where
-    showHex' x =
-      let s = Text.pack $ showHex x ""
-       in if Text.length s == 1
-            then "0" <> s
-            else s
-
-data RGBA =
-  RGBA !Int
-       !Int
-       !Int
-       !Double
-  deriving (Show, Eq, Generic)
-
-instance FromJSON RGBA
-
-instance ToJSON RGBA
