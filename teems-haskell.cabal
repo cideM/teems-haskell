@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d47385b2c7011d4c7d08269d999cbd2d5c0317360251f63da61cd83f1883655f
+-- hash: 26a9641d44332f17ec152476b140ae76b1cacb2c5943e8f40b769bde22c710e8
 
 name:           teems-haskell
 version:        0.1.0.0
@@ -106,6 +106,7 @@ test-suite teems-haskell-test
     , parsers
     , safe-exceptions
     , scientific
+    , string-qq
     , teems-haskell
     , text
     , trifecta

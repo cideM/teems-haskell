@@ -22,7 +22,7 @@ import           Util.Internal
 data AlacrittyMode
   = Normal
   | Bright
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 -- | Alacritty is the parse result of a line in the Alacritty config.
 -- It can either be a color name (e.g., black), or a mode (see above)
@@ -41,65 +41,68 @@ alacritty = App "alacritty" configCreator' ["alacritty/alacritty.yml"]
         (Vector.sequence . snd $
          List.foldl run (Normal, Vector.empty) (Text.lines conf))
       where
-        run (m, ls) line =
-          let getVal' = getVal t m
-           in case parseText lineP line of
-                (Success (ColorName n)) ->
-                  (m, ls `Vector.snoc` maybe noColorMsg newLine newVal)
-                  where newVal = getVal' n
-                        noColorMsg = Left $ missingColor n (name t)
-                        newLine = mkLine line
-                (Success (Mode m')) -> (m', ls `Vector.snoc` Right line)
-                (Failure _) -> (m, ls `Vector.snoc` Right line)
+        run (m, ls) line
+          -- cursor: can be both a heading or the start of the cursor:
+          -- '0x111111' color declaration ~_~
+          | strip line == "cursor:" = (m, ls `Vector.snoc` Right line)
+          | otherwise =
+            let getVal' = getVal t m
+             in case parseText lineP line of
+                  (Success (ColorName n)) ->
+                    (m, ls `Vector.snoc` maybe noColorMsg newLine newVal)
+                    where newVal = getVal' n
+                          noColorMsg = Left $ missingColor n (name t)
+                          newLine = mkLine line
+                  (Success (Mode m')) -> (m', ls `Vector.snoc` Right line)
+                  (Failure _) -> (m, ls `Vector.snoc` Right line)
+
+nonModeColorNames :: [ColorName]
+nonModeColorNames =
+  [ "background"
+  , "foreground"
+  , "text"
+  , "cursor"
+  , "dim_foreground"
+  , "bright_foreground"
+  ]
 
 -- | colorNames includes all color names we parse and on which lines we replace
 -- the color value with a new one from the theme
-colorNames :: [String]
+colorNames :: [ColorName]
 colorNames =
-  [ "black"
-  , "red"
-  , "green"
-  , "yellow"
-  , "blue"
-  , "magenta"
-  , "cyan"
-  , "white"
-  , "background"
-  , "foreground"
-  ]
+  ["black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"] ++
+  nonModeColorNames
 
--- TODO: This should be a single MapStrict.Map (Text, Mode) Text, not two maps.
--- | Map from non-unique color names from Alacritty's config file to the actual
--- color names from the theme, depending on the color block (= mode) we're in
-normal :: MapStrict.Map Text Text
-normal =
+nonModeColors :: MapStrict.Map ColorName Text
+nonModeColors =
   MapStrict.fromList
     [ ("background", "background")
     , ("foreground", "foreground")
-    , ("black", "color0")
-    , ("red", "color1")
-    , ("green", "color2")
-    , ("yellow", "color3")
-    , ("blue", "color4")
-    , ("magenta", "color5")
-    , ("cyan", "color6")
-    , ("white", "color7")
+    , ("text", "text")
+    , ("cursor", "cursor")
+    , ("dim_foreground", "dim_foreground")
+    , ("bright_foreground", "bright_foreground")
     ]
 
--- | Same as normal but for bright mode colors
-bright :: MapStrict.Map Text Text
-bright =
+modeColors :: MapStrict.Map (AlacrittyMode, ColorName) Text
+modeColors =
   MapStrict.fromList
-    [ ("background", "background")
-    , ("foreground", "foreground")
-    , ("black", "color8")
-    , ("red", "color9")
-    , ("green", "color10")
-    , ("yellow", "color11")
-    , ("blue", "color12")
-    , ("magenta", "color13")
-    , ("cyan", "color14")
-    , ("white", "color15")
+    [ ((Normal, "black"), "color0")
+    , ((Normal, "red"), "color1")
+    , ((Normal, "green"), "color2")
+    , ((Normal, "yellow"), "color3")
+    , ((Normal, "blue"), "color4")
+    , ((Normal, "magenta"), "color5")
+    , ((Normal, "cyan"), "color6")
+    , ((Normal, "white"), "color7")
+    , ((Bright, "black"), "color8")
+    , ((Bright, "red"), "color9")
+    , ((Bright, "green"), "color10")
+    , ((Bright, "yellow"), "color11")
+    , ((Bright, "blue"), "color12")
+    , ((Bright, "magenta"), "color13")
+    , ((Bright, "cyan"), "color14")
+    , ((Bright, "white"), "color15")
     ]
 
 -- | modeP parses the mode of the current color block
@@ -114,7 +117,7 @@ modeP =
 colorP :: Parser Alacritty
 colorP =
   ColorName . Text.pack <$>
-  (spaces *> choice (string <$> colorNames) <* char ':')
+  (spaces *> choice (string . Text.unpack <$> colorNames) <* char ':')
 
 -- | lineTillColorP parses all characters until the start of the color value.
 -- This way we can keep user specific indentation when replacing the color
@@ -123,31 +126,27 @@ colorP =
 -- now.
 lineTillColorP :: Parser Text
 lineTillColorP =
-  mkOut <$> many space <*> choice (string <$> colorNames) <*>
-  manyTill
-    (choice [letter, char ':', space])
+  mkOut <$> (Text.pack <$> many space) <*>
+  (Text.pack <$> choice (string . Text.unpack <$> colorNames)) <*>
+  (Text.pack <$>
+   manyTill
+     (choice [letter, char ':', space])
     -- Starting to veer into "half baked YAML parser territory". yaml can have
     -- single and double quotes.
-    (try ((string "\'" <|> string "\"") *> string "0x"))
+     (try ((string "\'" <|> string "\"") *> string "0x")))
   where
     mkOut leading colorName filler =
-      let leading' = Text.pack leading
-          colorName' = Text.pack colorName
-          filler' = Text.pack filler
-       in Text.empty <> leading' <> colorName' <> filler'
+      Text.empty <> leading <> colorName <> filler
 
 -- | getVal returns a new color value if one exists in the current theme. Needs
 -- to take the current color block (= mode) into account, so the correct map is
 -- queried
 getVal :: Theme -> AlacrittyMode -> ColorName -> Maybe RGBA
-getVal t m n =
-  let map' =
-        case m of
-          Bright -> bright
-          Normal -> normal
-      colors' = colors t
-   in do value <- MapStrict.lookup n map'
-         MapStrict.lookup value colors'
+getVal t m n
+  | n `elem` nonModeColorNames =
+    MapStrict.lookup n nonModeColors >>= flip MapStrict.lookup (colors t)
+  | otherwise =
+    MapStrict.lookup (m, n) modeColors >>= flip MapStrict.lookup (colors t)
 
 -- | mkLine creates a new line with which we can replace the old line in the
 -- config file

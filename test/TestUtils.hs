@@ -42,4 +42,6 @@ testTheme =
     , ("color13", RGBA 13 13 13 1)
     , ("color14", RGBA 14 14 14 1)
     , ("color15", RGBA 15 15 15 1)
+    , ("text", RGBA 12 12 12 1)
+    , ("cursor", RGBA 23 23 23 1)
     ]
