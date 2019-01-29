@@ -59,6 +59,7 @@ instance ColorValue RGBA where
     where
       showHex' x =
         let s = Text.pack $ Numeric.showHex x ""
+         -- TODO: Use printf format string
          in if Text.length s == 1
               then "0" <> s
               else s
