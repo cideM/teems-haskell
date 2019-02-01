@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.1.
+-- This file has been generated from package.yaml by hpack version 0.31.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 26a9641d44332f17ec152476b140ae76b1cacb2c5943e8f40b769bde22c710e8
+-- hash: 2c53beb4702139ff2defa5fcd595cff8f775640d912e2b4f70681587a2a12742
 
 name:           teems-haskell
 version:        0.1.0.0
@@ -49,6 +49,7 @@ library
     , bytestring
     , containers
     , directory
+    , mtl
     , parsers
     , safe-exceptions
     , scientific
@@ -71,6 +72,7 @@ executable teemsh
     , bytestring
     , containers
     , directory
+    , mtl
     , optparse-applicative
     , parsers
     , safe-exceptions
@@ -103,6 +105,7 @@ test-suite teems-haskell-test
     , containers
     , directory
     , hspec
+    , mtl
     , parsers
     , safe-exceptions
     , scientific

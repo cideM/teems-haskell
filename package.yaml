@@ -30,6 +30,7 @@ dependencies:
   - safe-exceptions
   - vector
   - scientific
+  - mtl
   - bytestring
 
 library:

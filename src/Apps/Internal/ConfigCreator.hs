@@ -1,9 +1,14 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Apps.Internal.ConfigCreator where
 
+import           Control.Monad.State   (State, evalState, execState, get, put,
+                                        runState)
 import qualified Data.Map              as Map
 import           Data.Text             as Text
 import           Parser.Internal
 import           Text.Trifecta
+import           Types.Internal.Colors (ColorValue)
 import           Types.Internal.Colors (RGBA)
 import           Types.Internal.Misc
 import           Util.Internal
@@ -45,3 +50,29 @@ configCreator' lineP mkLine t conf =
                 newLine = mkLine curr
                 newVal = getVal colorName
         (Failure _) -> Right curr
+
+transform ::
+  (OldLine -> s -> Bool) -- ^ shouldTransformLine
+  -> (OldLine -> s -> Maybe ColorName) -- ^ getColorName
+  -> (OldLine -> RGBA -> s -> Maybe NewLine) -- ^ getNewLine
+  -> (OldLine -> s -> s) -- ^ getNewState
+  -> s -- ^ initialState
+  -> Theme
+  -> Config
+  -> Either ErrMsg Config
+transform shouldTransformLine getColorName getNewLine getNewState initialState theme input =
+  fmap Text.unlines . sequence $
+  evalState (mapM stateFn (Text.lines input)) initialState
+  where
+    stateFn line = do
+      state <- get
+      let newState = getNewState line state -- ^ Make new state
+      put newState
+      if shouldTransformLine line newState
+        then case getColorName line newState >>= flip Map.lookup (colors theme) of
+               Nothing -> return $ Left "No color name bla" -- ^ The JS version just logs this to the console and keeps the old line
+               Just newColorValue ->
+                 case getNewLine line newColorValue newState of
+                   Nothing      -> return $ Left "No color name bla"
+                   Just newLine -> return $ Right newLine
+        else return $ Right line
