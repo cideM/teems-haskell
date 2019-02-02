@@ -1,21 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Apps.Internal.XTerm where
+module Apps.Internal.XTerm
+  ( xTerm
+  ) where
 
-import           Apps.Internal.ConfigCreator
-import           Apps.Internal.X             as XResources hiding
-                                                            (allowedPrefixes)
+import           Apps.Internal.MakeTransform
+import qualified Apps.Internal.XUtils        as XUtils
 import           Data.Text                   as Text
 import           Types.Internal.Misc
 
 xTerm :: App
-xTerm =
-  App
-    "xterm"
-    (configCreator'
-       (XResources.xLineP allowedPrefixes)
-       (XResources.makeNewLine allowedPrefixes))
-    [".Xresources"]
+xTerm = App "xterm" (makeTransform' $ XUtils.makeOptions allowedPrefixes) [".Xresources"]
 
 -- | See documentation for X in X.hs
 allowedPrefixes :: [Text]

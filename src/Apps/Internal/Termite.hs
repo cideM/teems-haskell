@@ -2,18 +2,34 @@
 
 module Apps.Internal.Termite where
 
-import           Apps.Internal.ConfigCreator
+import           Apps.Internal.MakeTransform
 import           Control.Applicative
 import           Data.Semigroup
 import           Data.Text                   as Text
-import           Parser.Internal
 import           Text.Trifecta
 import           Types.Internal.Colors       (RGBA (..))
 import           Types.Internal.Misc
+import           Parser.Internal             (parseText, colorNP)
 
 termite :: App
-termite = App "termite" (configCreator' lineP mkLine) ["termite/config"]
+termite = App "termite" (makeTransform' options) ["termite/config"]
+
+options :: MakeTransformOptions'
+options =
+  MakeTransformOptions'
+    { _shouldTransformLine' = shouldTransform
+    , _getColorName' = getColorName
+    , _getNewLine' = mkLine
+    }
   where
+    getColorName l =
+      case parseText lineP l of
+        Success color -> Just color
+        _             -> Nothing
+    shouldTransform l =
+      case parseText lineP l of
+        Success _ -> True
+        _         -> False
     mkLine l (RGBA r g b a) =
       case parseText lineTillColorP l of
         (Success leading) -> Right $ leading <> rgbaText

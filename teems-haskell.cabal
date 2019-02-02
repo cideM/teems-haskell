@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2c53beb4702139ff2defa5fcd595cff8f775640d912e2b4f70681587a2a12742
+-- hash: 9dbfa4146d57f8bc5c24a19c6d28c127fbf70aea02dcb8868c586b73d6301a13
 
 name:           teems-haskell
 version:        0.1.0.0
@@ -29,15 +29,15 @@ library
   exposed-modules:
       Apps.Apps
       Apps.Internal.Alacritty
-      Apps.Internal.ConfigCreator
       Apps.Internal.Kitty
+      Apps.Internal.MakeTransform
       Apps.Internal.Termite
       Apps.Internal.X
       Apps.Internal.XTerm
+      Apps.Internal.XUtils
       Parser.Internal
       Types.Internal.Colors
       Types.Internal.Misc
-      Util.Internal
   other-modules:
       Paths_teems_haskell
   hs-source-dirs:

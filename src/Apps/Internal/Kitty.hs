@@ -2,18 +2,34 @@
 
 module Apps.Internal.Kitty where
 
-import           Apps.Internal.ConfigCreator
+import           Apps.Internal.MakeTransform
 import           Control.Applicative
 import           Data.Semigroup
 import           Data.Text                   as Text
-import           Parser.Internal
 import           Text.Trifecta
 import qualified Types.Internal.Colors       as Colors
 import           Types.Internal.Misc
+import           Parser.Internal             (parseText, colorNP)
 
 kitty :: App
-kitty = App "kitty" (configCreator' lineP mkLine) ["kitty/kitty.config"]
+kitty = App "kitty" (makeTransform' options) ["kitty/kitty.config"]
+
+options :: MakeTransformOptions'
+options =
+  MakeTransformOptions'
+    { _shouldTransformLine' = shouldTransform
+    , _getColorName' = getColorName
+    , _getNewLine' = mkLine
+    }
   where
+    getColorName l =
+      case parseText lineP l of
+        Success color -> Just color
+        _             -> Nothing
+    shouldTransform l =
+      case parseText lineP l of
+        Success _ -> True
+        _         -> False
     lineP =
       spaces *> choice [colorNP, kittyColorP] <* (some space <|> string "=")
     mkLine l rgba =

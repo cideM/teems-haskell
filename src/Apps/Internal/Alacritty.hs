@@ -1,21 +1,21 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Apps.Internal.Alacritty where
+module Apps.Internal.Alacritty
+  ( alacritty
+  ) where
 
-import           Apps.Internal.ConfigCreator (NewLine, OldLine)
+import           Apps.Internal.MakeTransform (MakeTransformOptions (..),
+                                              NewLine, OldLine, makeTransform)
 import           Control.Applicative
 import           Data.Functor
-import qualified Data.List                   as List
 import qualified Data.Map.Strict             as MapStrict
 import           Data.Semigroup
 import           Data.Text                   as Text
-import qualified Data.Vector                 as Vector
-import           Parser.Internal
-import           Text.Trifecta               hiding (line)
+import           Text.Trifecta
 import           Types.Internal.Colors       (HexColor (..), RGBA (..))
 import qualified Types.Internal.Colors       as Colors
 import           Types.Internal.Misc
-import           Util.Internal
+import           Parser.Internal             (parseText)
 
 -- | AlacrittyMode exists because Alacritty's config has two color blocks, one
 -- for normal colors (0-7) and one for bright colors (color8-15)
@@ -24,37 +24,31 @@ data AlacrittyMode
   | Bright
   deriving (Show, Eq, Ord)
 
--- | Alacritty is the parse result of a line in the Alacritty config.
--- It can either be a color name (e.g., black), or a mode (see above)
-data Alacritty
-  = ColorName Text
-  | Mode AlacrittyMode
-  deriving (Show, Eq)
-
 alacritty :: App
-alacritty = App "alacritty" configCreator' ["alacritty/alacritty.yml"]
+alacritty = App "alacritty" (makeTransform options) ["alacritty/alacritty.yml"]
+
+options :: MakeTransformOptions AlacrittyMode
+options =
+  MakeTransformOptions
+    { _shouldTransformLine = shouldTransform
+    , _getColorName = getColorName
+    , _getNewLine = const mkLine
+    , _getNewState = getNewState
+    , _initialState = Normal
+    }
   where
-    lineP = choice [modeP, colorP]
-    configCreator' t conf =
-      fmap
-        unlines'
-        (Vector.sequence . snd $
-         List.foldl run (Normal, Vector.empty) (Text.lines conf))
-      where
-        run (m, ls) line
-          -- cursor: can be both a heading or the start of the cursor:
-          -- '0x111111' color declaration ~_~
-          | strip line == "cursor:" = (m, ls `Vector.snoc` Right line)
-          | otherwise =
-            let getVal' = getVal t m
-             in case parseText lineP line of
-                  (Success (ColorName n)) ->
-                    (m, ls `Vector.snoc` maybe noColorMsg newLine newVal)
-                    where newVal = getVal' n
-                          noColorMsg = Left $ missingColor n (name t)
-                          newLine = mkLine line
-                  (Success (Mode m')) -> (m', ls `Vector.snoc` Right line)
-                  (Failure _) -> (m, ls `Vector.snoc` Right line)
+    getNewState mode l =
+      case parseText modeP l of
+        Success newMode -> newMode
+        _               -> mode
+    shouldTransform _ l =
+      case parseText lineTillColorP l of
+        Success _ -> True
+        _         -> False
+    getColorName mode l =
+      case parseText colorP l of
+        Success color -> getVal mode color
+        _             -> Nothing
 
 nonModeColorNames :: [ColorName]
 nonModeColorNames =
@@ -106,17 +100,16 @@ modeColors =
     ]
 
 -- | modeP parses the mode of the current color block
-modeP :: Parser Alacritty
+modeP :: Parser AlacrittyMode
 modeP =
-  try $
-  Mode <$>
-  (spaces *> (string "bright:" $> Bright) <|>
-   (string "normal:" $> Normal) <* spaces)
+  try
+    (spaces *> (string "bright:" $> Bright) <|>
+     (string "normal:" $> Normal) <* spaces)
 
 -- | colorP parses the name of a color (e.g., black)
-colorP :: Parser Alacritty
+colorP :: Parser ColorName
 colorP =
-  ColorName . Text.pack <$>
+  Text.pack <$>
   (spaces *> choice (string . Text.unpack <$> colorNames) <* char ':')
 
 -- | lineTillColorP parses all characters until the start of the color value.
@@ -141,12 +134,10 @@ lineTillColorP =
 -- | getVal returns a new color value if one exists in the current theme. Needs
 -- to take the current color block (= mode) into account, so the correct map is
 -- queried
-getVal :: Theme -> AlacrittyMode -> ColorName -> Maybe RGBA
-getVal t m n
-  | n `elem` nonModeColorNames =
-    MapStrict.lookup n nonModeColors >>= flip MapStrict.lookup (colors t)
-  | otherwise =
-    MapStrict.lookup (m, n) modeColors >>= flip MapStrict.lookup (colors t)
+getVal :: AlacrittyMode -> ColorName -> Maybe ColorName
+getVal m n
+  | n `elem` nonModeColorNames = MapStrict.lookup n nonModeColors
+  | otherwise = MapStrict.lookup (m, n) modeColors
 
 -- | mkLine creates a new line with which we can replace the old line in the
 -- config file
@@ -159,6 +150,3 @@ mkLine l rgba =
     (Failure errInfo) ->
       Left $
       "Failed to parse leading part of old line: " <> Text.pack (show errInfo)
-
-unlines' :: Vector.Vector Text -> Text
-unlines' = Vector.foldl Text.append Text.empty . fmap (<> "\n")
