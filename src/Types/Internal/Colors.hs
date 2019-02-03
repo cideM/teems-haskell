@@ -57,6 +57,7 @@ instance ColorValue RGBA where
   toRGBA = id
   toHex (RGBA r g b _) = HexColor (showHex' r) (showHex' g) (showHex' b)
     where
+      -- TODO: printf
       showHex' x =
         let s = Text.pack $ Numeric.showHex x ""
          in if Text.length s == 1

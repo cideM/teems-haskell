@@ -1,58 +1,53 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module Apps.Internal.Kitty where
 
-import           Apps.Internal.MakeTransform
-import           Control.Applicative
-import           Data.Semigroup
-import           Data.Text                   as Text
+import qualified Data.Map                  as Map
+import           Data.Semigroup            ((<>))
+import           Data.Text                 (Text)
+import qualified Data.Text                 as Text
+import           Parser.Internal           (colorNP, parseText)
 import           Text.Trifecta
-import qualified Types.Internal.Colors       as Colors
+import           Types.Internal.Colors     (HexColor (..))
+import qualified Types.Internal.Colors     as Colors
+import           Types.Internal.Exceptions
 import           Types.Internal.Misc
-import           Parser.Internal             (parseText, colorNP)
 
 kitty :: App
-kitty = App "kitty" (makeTransform' options) ["kitty/kitty.config"]
+kitty = App "kitty" transform ["kitty/kitty.config"]
 
-options :: MakeTransformOptions'
-options =
-  MakeTransformOptions'
-    { _shouldTransformLine' = shouldTransform
-    , _getColorName' = getColorName
-    , _getNewLine' = mkLine
-    }
+transform :: Theme -> Config -> Either TransformExceptionType Config
+transform theme input = fmap Text.unlines . mapM f $ Text.lines input
   where
-    getColorName l =
-      case parseText lineP l of
-        Success color -> Just color
-        _             -> Nothing
-    shouldTransform l =
-      case parseText lineP l of
-        Success _ -> True
-        _         -> False
-    lineP =
-      spaces *> choice [colorNP, kittyColorP] <* (some space <|> string "=")
-    mkLine l rgba =
-      case parseText lineTillColorP l of
-        (Success leading) -> Right $ leading <> hex
-          where hex = Text.pack . show $ Colors.toHex rgba
-        (Failure errInfo) ->
-          Left $
-          "Failed to parse leading part of old line: " <>
-          Text.pack (show errInfo)
+    f l =
+      case parseText lineParser l of
+        Failure _ -> Right l
+        Success ParseResult {..} ->
+          case Map.lookup _name (colors theme) of
+            Nothing -> Left $ ColorNotFound _name
+            Just rgba ->
+              let (HexColor r g b) = Colors.toHex rgba
+                  replacement = r <> g <> b
+               in Right $ Text.replace _value replacement l
 
--- Excluding colorN (color0, color100,...)
-kittyColorP :: Parser Text
-kittyColorP =
-  Text.pack <$>
-  choice
-    (fmap
-       string
-       [ "foreground"
-       , "selection_foreground"
-       , "selection_background"
-       , "background"
-       ])
+data ParseResult = ParseResult
+  { _name  :: ColorName
+  , _value :: Text
+  }
 
-lineTillColorP :: Parser Text
-lineTillColorP = Text.pack <$> manyTill anyChar (skipSome (char '#') <|> eof)
+lineParser :: Parser ParseResult
+lineParser =
+  ParseResult <$> (Text.pack <$> (whiteSpace *> choice [colorNP, kittyColorP])) <*>
+  (Text.pack <$>
+   (whiteSpace *> string "=" *> whiteSpace *> string "#" *> some alphaNum))
+  where
+    kittyColorP =
+      choice
+        (fmap
+           string
+           [ "foreground"
+           , "selection_foreground"
+           , "selection_background"
+           , "background"
+           ])

@@ -9,7 +9,7 @@ import           Types.Internal.Misc
 
 spec :: Spec
 spec =
-  describe "Kitty.configCreator" $
+  describe "configCreator" $
   it "should replace colors with those from the theme" $ do
     let config =
           "foreground = #c5c8c6\n background = #1d1f21\n color0 = #1d1f21\n color8 = #969896\n color1 = #cc6666\n color9 = #cc6666\n color2 = #b5bd68\n color10 = #b5bd68\n color3 = #f0c674\n color11 = #f0c674\n color4 = #81a2be\n color12 = #81a2be\n color5 = #b294bb\n color13 = #b294bb\n color6 = #8abeb7\n color14 = #8abeb7\n color7 = #c5c8c6\n color15 = #ffffff\n"

@@ -1,18 +1,58 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
 
 module XSpec where
 
 import           Apps.Internal.X
+import           Data.String.QQ
 import           Test.Hspec
 import           TestUtils
 import           Types.Internal.Misc
 
 spec :: Spec
 spec =
-  describe "X.configCreator" $
-  it "should replace colors with those from the theme" $ do
-    let config =
-          "*.foreground: #c5c8c6\n *.background: #1d1f21\n *.color0: #1d1f21\n *.color8: #969896\n *.color1: #cc6666\n *.color9: #cc6666\n *.color2: #b5bd68\n *.color10: #b5bd68\n *.color3: #f0c674\n *.color11: #f0c674\n *.color4: #81a2be\n *.color12: #81a2be\n *.color5: #b294bb\n *.color13: #b294bb\n *.color6: #8abeb7\n *.color14: #8abeb7\n *.color7: #c5c8c6\n *.color15: #ffffff\n"
-    let expected =
-          "*.foreground: #ffffff\n *.background: #323232\n *.color0: #000000\n *.color8: #080808\n *.color1: #010101\n *.color9: #090909\n *.color2: #020202\n *.color10: #0a0a0a\n *.color3: #030303\n *.color11: #0b0b0b\n *.color4: #040404\n *.color12: #0c0c0c\n *.color5: #050505\n *.color13: #0d0d0d\n *.color6: #060606\n *.color14: #0e0e0e\n *.color7: #070707\n *.color15: #0f0f0f\n"
-    _configCreator x testTheme config `shouldBe` Right expected
+  describe "configCreator" $
+  it "should replace colors with those from the theme" $
+  let config =
+        [s|
+      *.foreground: #c5c8c6
+      *.background: #1d1f21
+      *.color0: #1d1f21
+      *.color8: #969896
+      *.color1: #cc6666
+      *.color9: #cc6666
+      *.color2: #b5bd68
+      *.color10: #b5bd68
+      *.color3: #f0c674
+      *.color11: #f0c674
+      *.color4: #81a2be
+      *.color12: #81a2be
+      *.color5: #b294bb
+      *.color13: #b294bb
+      *.color6: #8abeb7
+      *.color14: #8abeb7
+      *.color7: #c5c8c6
+      *.color15: #ffffff
+|]
+      expected =
+        [s|
+      *.foreground: #ffffff
+      *.background: #323232
+      *.color0: #000000
+      *.color8: #080808
+      *.color1: #010101
+      *.color9: #090909
+      *.color2: #020202
+      *.color10: #0a0a0a
+      *.color3: #030303
+      *.color11: #0b0b0b
+      *.color4: #040404
+      *.color12: #0c0c0c
+      *.color5: #050505
+      *.color13: #0d0d0d
+      *.color6: #060606
+      *.color14: #0e0e0e
+      *.color7: #070707
+      *.color15: #0f0f0f
+|]
+   in _configCreator x testTheme config `shouldBe` Right expected

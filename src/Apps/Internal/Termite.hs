@@ -1,67 +1,60 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module Apps.Internal.Termite where
 
-import           Apps.Internal.MakeTransform
-import           Control.Applicative
-import           Data.Semigroup
-import           Data.Text                   as Text
+import           Control.Applicative       ((<|>))
+import qualified Data.Map                  as Map
+import           Data.Semigroup            ((<>))
+import           Data.Text                 (Text)
+import qualified Data.Text                 as Text
+import           Parser.Internal           (colorNP, parseText)
 import           Text.Trifecta
-import           Types.Internal.Colors       (RGBA (..))
+import           Types.Internal.Colors     (RGBA (..))
+import           Types.Internal.Exceptions
 import           Types.Internal.Misc
-import           Parser.Internal             (parseText, colorNP)
 
 termite :: App
-termite = App "termite" (makeTransform' options) ["termite/config"]
+termite = App "termite" transform ["termite/config"]
 
-options :: MakeTransformOptions'
-options =
-  MakeTransformOptions'
-    { _shouldTransformLine' = shouldTransform
-    , _getColorName' = getColorName
-    , _getNewLine' = mkLine
-    }
+transform :: Theme -> Config -> Either TransformExceptionType Config
+transform theme input = fmap Text.unlines . mapM f $ Text.lines input
   where
-    getColorName l =
-      case parseText lineP l of
-        Success color -> Just color
-        _             -> Nothing
-    shouldTransform l =
-      case parseText lineP l of
-        Success _ -> True
-        _         -> False
-    mkLine l (RGBA r g b a) =
-      case parseText lineTillColorP l of
-        (Success leading) -> Right $ leading <> rgbaText
-          where rgbaText =
-                  "= rgba(" <> (Text.pack . show $ r) <> ", " <>
-                  (Text.pack . show $ g) <>
-                  ", " <>
-                  (Text.pack . show $ b) <>
-                  ", " <>
-                  (Text.pack . show $ a) <>
-                  ")"
-        (Failure errInfo) ->
-          Left $
-          "Failed to parse leading part of old line: " <>
-          Text.pack (show errInfo)
+    tshow :: (Show a) => a -> Text
+    tshow = Text.pack . show
+    f l =
+      case parseText lineParser l of
+        Failure _ -> Right l
+        Success ParseResult {..} ->
+          case Map.lookup _name (colors theme) of
+            Nothing -> Left $ ColorNotFound _name
+            Just (RGBA r g b a) ->
+              let replacement =
+                    "rgba(" <> tshow r <> ", " <> tshow g <> ", " <> tshow b <> ", " <>
+                    tshow a <> ")"
+               in Right $ Text.replace _value replacement l
 
--- | Parses termite specific color values
-termiteColorP :: Parser Text
-termiteColorP =
-  Text.pack <$>
-  choice
-    (fmap
-       string
-       [ "foreground"
-       , "foreground_bold"
-       , "foreground_dim"
-       , "background"
-       , "cursor"
-       ])
+data ParseResult = ParseResult
+  { _name  :: ColorName
+  , _value :: Text
+  } deriving (Show)
 
-lineP :: Parser Text
-lineP = spaces *> choice [colorNP, termiteColorP] <* (some space <|> string "=")
-
-lineTillColorP :: Parser Text
-lineTillColorP = Text.pack <$> manyTill anyChar (char '=')
+lineParser :: Parser ParseResult
+lineParser =
+  ParseResult <$> (Text.pack <$> (whiteSpace *> choice [colorNP, colorParser])) <*>
+  (Text.pack <$>
+   (whiteSpace *> string "=" *> whiteSpace *> (rgbaParser <|> hexParser)))
+  where
+    rgbaParser =
+      string "rgba" *> parens (some $ choice [char ',', char '.', digit, space]) >>= \s ->
+        return $ "rgba(" <> s <> ")"
+    hexParser = whiteSpace *> count 7 (choice [alphaNum, char '#'])
+    colorParser =
+      choice
+        (string <$>
+         [ "foreground"
+         , "foreground_bold"
+         , "foreground_dim"
+         , "background"
+         , "cursor"
+         ])
