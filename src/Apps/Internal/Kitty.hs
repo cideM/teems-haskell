@@ -15,7 +15,7 @@ import           Types.Internal.Exceptions
 import           Types.Internal.Misc
 
 kitty :: App
-kitty = App "kitty" transform ["kitty/kitty.config"]
+kitty = App "kitty" transform ["kitty/kitty.conf"]
 
 transform :: Theme -> Config -> Either TransformExceptionType Config
 transform theme input = fmap Text.unlines . mapM f $ Text.lines input
@@ -40,7 +40,7 @@ lineParser :: Parser ParseResult
 lineParser =
   ParseResult <$> (Text.pack <$> (whiteSpace *> choice [colorNP, kittyColorP])) <*>
   (Text.pack <$>
-   (whiteSpace *> string "=" *> whiteSpace *> string "#" *> some alphaNum))
+   (whiteSpace *> string "#" *> some alphaNum))
   where
     kittyColorP =
       choice
@@ -50,4 +50,5 @@ lineParser =
            , "selection_foreground"
            , "selection_background"
            , "background"
+           , "cursor"
            ])

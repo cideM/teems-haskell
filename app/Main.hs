@@ -65,7 +65,8 @@ activateTheme theme = liftIO $ traverse_ transform apps
       let maker = _configCreator app
           fps = _configPaths app
        in liftIO $
-          traverse getConfigPath fps >>= filterM doesFileExist >>=
+          TextIO.putStrLn (_appName app) >> traverse getConfigPath fps >>=
+          filterM doesFileExist >>=
           traverse_ (mkConfig maker)
     mkConfig f fp = do
       conf <- TextIO.readFile fp
@@ -81,16 +82,16 @@ findTheme tn ts = do
     (Just a) -> return a
 
 handleException :: (MonadIO m) => AppException -> m ()
-handleException e = liftIO $ TextIO.putStrLn msg
+handleException e = liftIO $ TextIO.putStrLn ("\t" <> msg)
   where
     msg =
       case e of
         ThemeNotFoundException -> "Theme not found"
         ThemeDecodeException err -> "Could not decode config file: " <> err
-        TransformException err fp ->
+        TransformException err _ ->
           case err of
             ColorNotFound colorName ->
-              "Color " <> colorName <> " not found in " <> Text.pack fp
+              "Color " <> colorName <> " not found in theme"
 
 configPathP :: Parser FilePath
 configPathP =
