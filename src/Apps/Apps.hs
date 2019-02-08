@@ -6,7 +6,7 @@ module Apps.Apps
   , xTerm
   ) where
 
-import           Apps.Internal.Alacritty (alacritty)
+import           Apps.Internal.Alacritty
 import           Apps.Internal.Kitty     (kitty)
 import           Apps.Internal.Termite   (termite)
 import           Apps.Internal.X         (x)

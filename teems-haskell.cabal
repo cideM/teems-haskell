@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.1.
+-- This file has been generated from package.yaml by hpack version 0.31.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 26a9641d44332f17ec152476b140ae76b1cacb2c5943e8f40b769bde22c710e8
+-- hash: 1e31c43c76d523771b34471677aef0f1a59b4ff32e51227631eba6352757e046
 
 name:           teems-haskell
 version:        0.1.0.0
@@ -29,15 +29,15 @@ library
   exposed-modules:
       Apps.Apps
       Apps.Internal.Alacritty
-      Apps.Internal.ConfigCreator
       Apps.Internal.Kitty
       Apps.Internal.Termite
       Apps.Internal.X
       Apps.Internal.XTerm
+      Apps.Internal.XUtils
       Parser.Internal
       Types.Internal.Colors
+      Types.Internal.Exceptions
       Types.Internal.Misc
-      Util.Internal
   other-modules:
       Paths_teems_haskell
   hs-source-dirs:
@@ -49,6 +49,7 @@ library
     , bytestring
     , containers
     , directory
+    , mtl
     , parsers
     , safe-exceptions
     , scientific
@@ -71,6 +72,7 @@ executable teemsh
     , bytestring
     , containers
     , directory
+    , mtl
     , optparse-applicative
     , parsers
     , safe-exceptions
@@ -103,6 +105,7 @@ test-suite teems-haskell-test
     , containers
     , directory
     , hspec
+    , mtl
     , parsers
     , safe-exceptions
     , scientific

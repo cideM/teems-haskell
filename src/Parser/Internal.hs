@@ -9,5 +9,5 @@ parseText :: Parser a -> Text -> Trifecta.Result a
 parseText p = parseString p mempty . Text.unpack
 
 -- | colorNP parses colorN (color2, color200, ...)
-colorNP :: Parser Text
-colorNP = Text.pack . (<>) "color" <$> (string "color" *> some digit)
+colorNP :: Parser String
+colorNP = (<>) "color" <$> (string "color" *> some digit)

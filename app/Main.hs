@@ -8,25 +8,16 @@ import           Control.Exception.Safe
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Data.Aeson
-import           Data.ByteString.Lazy   as ByteStringLazy
+import           Data.ByteString.Lazy      as ByteStringLazy
 import           Data.Foldable
-import           Data.List              as List
-import           Data.Semigroup         ((<>))
-import           Data.Text              as Text
-import           Data.Text.IO           as TextIO
+import           Data.List                 as List
+import           Data.Semigroup            ((<>))
+import qualified Data.Text                 as Text
+import           Data.Text.IO              as TextIO
 import           Options.Applicative
 import           System.Directory
+import           Types.Internal.Exceptions
 import           Types.Internal.Misc
-
--- | Umbrella data type for all possible exceptions reported to users
-data AppException
-  = ThemeDecodeException Text -- ^ When failing to decode with aeson
-  | ThemeNotFoundException -- ^ When theme is not found in config file passed via args
-  | TransformException ErrMsg
-                       FilePath -- ^ Error during transformation of a config
-  deriving (Show)
-
-instance Exception AppException
 
 newtype Commands =
   Commands Command
@@ -97,7 +88,9 @@ handleException e = liftIO $ TextIO.putStrLn msg
         ThemeNotFoundException -> "Theme not found"
         ThemeDecodeException err -> "Could not decode config file: " <> err
         TransformException err fp ->
-          "Could not transform " <> Text.pack fp <> "\n" <> err
+          case err of
+            ColorNotFound colorName ->
+              "Color " <> colorName <> " not found in " <> Text.pack fp
 
 configPathP :: Parser FilePath
 configPathP =

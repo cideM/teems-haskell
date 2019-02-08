@@ -2,7 +2,7 @@
 
 module TestUtils where
 
-import           Data.Map              as Map
+import qualified Data.Map              as Map
 import           Text.Trifecta
 import           Types.Internal.Colors (RGBA (..))
 import           Types.Internal.Misc

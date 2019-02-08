@@ -8,7 +8,8 @@ This is a toy project! It reads a config file where you can specify color themes
 
 ## Quick start
 
-Create `config.json` in your home directory using RGBA values as `json` arrays.
+Create `config.json` in your home directory using RGBA values as `json` arrays
+or hex colors as strings.
 
 ```json
 [
@@ -33,7 +34,7 @@ Create `config.json` in your home directory using RGBA values as `json` arrays.
             "color6": [140, 208, 211, 1],
             "color14": [147, 224, 227, 1],
             "color7": [220, 220, 204, 1],
-            "color15": [255, 255, 255, 1]
+            "color15": "#FFFFFF"
         }
     }
 ]

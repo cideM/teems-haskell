@@ -1,22 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Apps.Internal.XTerm where
+module Apps.Internal.XTerm
+  ( xTerm
+  ) where
 
-import           Apps.Internal.ConfigCreator
-import           Apps.Internal.X             as XResources hiding
-                                                            (allowedPrefixes)
-import           Data.Text                   as Text
+import qualified Apps.Internal.XUtils        as XUtils
 import           Types.Internal.Misc
 
+-- TODO: Lowercase prefixes and compare to lower case Xresources name
 xTerm :: App
-xTerm =
-  App
-    "xterm"
-    (configCreator'
-       (XResources.xLineP allowedPrefixes)
-       (XResources.makeNewLine allowedPrefixes))
-    [".Xresources"]
-
--- | See documentation for X in X.hs
-allowedPrefixes :: [Text]
-allowedPrefixes = ["XTerm*"]
+xTerm = App "xterm" (XUtils.transform ["XTerm*", "xterm*", "Xterm*"]) [".Xresources"]

@@ -15,6 +15,7 @@ import qualified Data.Text        as Text
 import qualified Data.Vector      as Vector
 import           GHC.Generics     (Generic)
 import qualified Numeric
+import           Text.Printf      (printf)
 
 type R = Text
 
@@ -57,12 +58,7 @@ instance ColorValue RGBA where
   toRGBA = id
   toHex (RGBA r g b _) = HexColor (showHex' r) (showHex' g) (showHex' b)
     where
-      showHex' x =
-        let s = Text.pack $ Numeric.showHex x ""
-         -- TODO: Use printf format string
-         in if Text.length s == 1
-              then "0" <> s
-              else s
+      showHex' = Text.pack . printf "%02x"
 
 isScientific :: Value -> Bool
 isScientific (Number _) = True
