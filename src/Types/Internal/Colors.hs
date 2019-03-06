@@ -15,7 +15,7 @@ import qualified Data.Text        as Text
 import qualified Data.Vector      as Vector
 import           GHC.Generics     (Generic)
 import qualified Numeric
-import Text.Printf      (printf)
+import           Text.Printf      (printf)
 
 type R = Text
 
