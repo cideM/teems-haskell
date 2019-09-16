@@ -88,10 +88,10 @@ handleException e = liftIO $ TextIO.putStrLn ("\t" <> msg)
       case e of
         ThemeNotFoundException -> "Theme not found"
         ThemeDecodeException err -> "Could not decode config file: " <> err
-        TransformException err _ ->
+        TransformException err fp ->
           case err of
             ColorNotFound colorName ->
-              "Color " <> colorName <> " not found in theme"
+              "Color " <> colorName <> " not found in theme. " <> Text.pack fp
 
 configPathP :: Parser FilePath
 configPathP =
